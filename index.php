@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TravelFinder - Trouvez vos voyages idéaux</title>
+    <title>JetReserve - Trouvez vos voyages idéaux</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
@@ -16,21 +16,22 @@
     <header>
         <div class="container">
             <div class="header-top">
-                <a href="#" class="logo">Travel<span>Finder</span></a>
+                <a href="#" class="logo">Jet<span>Reserve</span></a>
                 <div class="auth-buttons">
                     <a href="vge64/connexion.php" class="btn btn-outline">Connexion</a>
                     <a href="vge64/inscription.php" class="btn btn-primary">Inscription</a>
                 </div>
             </div>
             <nav class="nav-menu">
-                <ul class="nav-links">
-                    <li><a href="#"><i class="fas fa-plane"></i> Vols</a></li>
-                    <li><a href="#"><i class="fas fa-hotel"></i> Hôtels</a></li>
-                    <li><a href="#"><i class="fas fa-suitcase"></i> Vols + Hôtels</a></li>
-                    <li><a href="#"><i class="fas fa-car"></i> Voitures</a></li>
-                    <li><a href="#"><i class="fas fa-ticket-alt"></i> Activités</a></li>
-                    <li><a href="#"><i class="fas fa-percentage"></i> Offres</a></li>
-                </ul>
+            <ul class="nav-links">
+             <li><a href="#"><i class="fas fa-home"></i> Accueil</a></li>
+             <li><a href="#"><i class="fas fa-plane-departure"></i>Vols</a></li>
+             <li><a href="#"><i class="fas fa-suitcase-rolling"></i> Forfaits</a></li>
+             <li><a href="#"><i class="fas fa-ticket-alt"></i> Billetterie</a></li>
+             <li><a href="#"><i class="fas fa-map-marked-alt"></i> Destinations</a></li>
+             <li><a href="#"><i class="fas fa-tags"></i> Offres spéciales</a></li>
+             
+           </ul>
                 <div class="contact-info">
                     <a href="#"><i class="fas fa-phone-alt"></i> Service client</a>
                 </div>
