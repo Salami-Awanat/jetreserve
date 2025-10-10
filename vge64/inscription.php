@@ -49,7 +49,7 @@ if (isset($_POST['inscrire'])) {
         </form>
 
         <p>Déjà un compte ? <a href="connexion.php">Connectez-vous</a></p>
-        <p><a href="../vge64/index.php">⬅ Retour à l'accueil</a></p>
+        <p><a href="../index.php">⬅ Retour à l'accueil</a></p>
     </div>
 </body>
 </html>
