@@ -617,7 +617,7 @@
             const priceDiv = document.createElement('div');
             priceDiv.innerHTML = `
                 <div style="font-size: 24px; font-weight: bold; color: #131a29ff;">${flight.price}€</div>
-                <div style="color: #64748b; font-size: 12px;">${flight.class}</div>
+                <div style="color: #151b24ff; font-size: 12px;">${flight.class}</div>
             `;
             
             const bookButton = document.createElement('button');
@@ -634,11 +634,11 @@
             `;
             
             bookButton.onmouseenter = () => {
-                bookButton.style.background = '#1d4ed8';
+                bookButton.style.background = '#0f1525ff';
             };
             
             bookButton.onmouseleave = () => {
-                bookButton.style.background = '#2563eb';
+                bookButton.style.background = '#0c121eff';
             };
             
             bookButton.onclick = () => {
