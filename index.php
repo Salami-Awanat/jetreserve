@@ -18,8 +18,8 @@
             <div class="header-top">
                 <a href="#" class="logo">Travel<span>Finder</span></a>
                 <div class="auth-buttons">
-                    <button class="btn btn-outline">Connexion</button>
-                    <button class="btn btn-primary">Inscription</button>
+                    <a href="vge64/connexion.php" class="btn btn-outline">Connexion</a>
+                    <a href="vge64/inscription.php" class="btn btn-primary">Inscription</a>
                 </div>
             </div>
             <nav class="nav-menu">

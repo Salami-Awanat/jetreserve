@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: url('../images/flight-bg.jpg') no-repeat center center/cover;
+    position: relative;
+}
+
+body::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+}
+
+.auth-container {
+    position: relative;
+    width: 400px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(12px);
+    color: #fff;
+    text-align: center;
+    z-index: 1;
+}
+
+.auth-container h2 {
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.auth-container p {
+    margin-bottom: 15px;
+}
+
+.auth-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.auth-container label {
+    text-align: left;
+    font-size: 14px;
+    color: #e0e0e0;
+}
+
+.auth-container input, .auth-container select {
+    padding: 10px 12px;
+    border: none;
+    border-radius: 10px;
+    outline: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.auth-container input::placeholder {
+    color: #ddd;
+}
+
+.auth-container button {
+    background: linear-gradient(135deg, #007bff, #00c3ff);
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.auth-container button:hover {
+    background: linear-gradient(135deg, #00aaff, #0088ff);
+}
+
+.auth-container a {
+    color: #00c3ff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.auth-container a:hover {
+    text-decoration: underline;
+}
+
+.message {
+    background: rgba(255, 255, 255, 0.2);
+    border-left: 4px solid #00c3ff;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    color: #fff;
+}
