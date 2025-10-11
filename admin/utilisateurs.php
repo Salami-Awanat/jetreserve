@@ -82,7 +82,7 @@ if (isset($_POST['action'])) {
                     <li><a class="dropdown-item" href="index1.php"><i class="fas fa-home me-2"></i>Accueil admin</a></li>
                     <li><a class="dropdown-item" href="profile.php"><i class="fas fa-user me-2"></i>Mon profil</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="../deconnexion.php">
+                    <li><a class="dropdown-item text-danger" href="../index.php">
                         <i class="fas fa-power-off me-2"></i>Déconnexion
                     </a></li>
                     </ul>
@@ -176,12 +176,7 @@ if (isset($_POST['action'])) {
                                 Support & messages
                             </a>
                         </li>
-                        <li class="nav-item mt-5">
-                            <a class="nav-link text-danger" href="../index.php">
-                                <i class="fas fa-sign-out-alt me-2"></i>
-                                Déconnexion
-                            </a>
-                        </li>
+                      
                     </ul>
                 </div>
             </nav>
