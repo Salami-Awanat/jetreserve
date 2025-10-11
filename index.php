@@ -624,149 +624,172 @@
         }
 
         // Fonction pour créer un élément de vol
-        function createFlightElement(flight, passengers) {
-            const flightElement = document.createElement('div');
-            flightElement.style.cssText = `
-                border: 1px solid #e2e8f0;
-                border-radius: 8px;
-                padding: 20px;
-                margin-bottom: 15px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                transition: all 0.3s ease;
-                position: relative;
-            `;
-            
-            if (flight.featured) {
-                flightElement.style.borderLeft = '4px solid #2563eb';
-                flightElement.style.background = 'linear-gradient(135deg, #f8fafc, white)';
-            }
-            
-            flightElement.onmouseenter = () => {
-                flightElement.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-                flightElement.style.transform = 'translateY(-2px)';
-            };
-            
-            flightElement.onmouseleave = () => {
-                flightElement.style.boxShadow = 'none';
-                flightElement.style.transform = 'translateY(0)';
-            };
-            
-            // Format des heures
-            const formatTime = (date) => {
-                return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-            };
-            
-            // Badge recommandé
-            if (flight.featured) {
-                const badge = document.createElement('div');
-                badge.textContent = '⭐ Recommandé';
-                badge.style.cssText = `
-                    position: absolute;
-                    top: -10px;
-                    left: 20px;
-                    background: #2563eb;
-                    color: white;
-                    padding: 4px 8px;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    font-weight: 600;
-                `;
-                flightElement.appendChild(badge);
-            }
-            
-            // Informations du vol (gauche)
-            const flightInfo = document.createElement('div');
-            flightInfo.style.cssText = `
-                display: flex;
-                align-items: center;
-                gap: 20px;
-            `;
-            
-            // Compagnie aérienne
-            const airlineDiv = document.createElement('div');
-            airlineDiv.innerHTML = `
-                <div style="font-weight: bold; font-size: 16px;">${flight.airline}</div>
-                <div style="color: #64748b; font-size: 14px;">${flight.flightNumber}</div>
-            `;
-            
-            // Horaires
-            const scheduleDiv = document.createElement('div');
-            scheduleDiv.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div>
-                        <div style="font-weight: bold; font-size: 18px;">${formatTime(flight.departureTime)}</div>
-                        <div style="color: #64748b; font-size: 12px;">${document.getElementById('from').value || 'Départ'}</div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="color: #64748b; font-size: 12px;">${flight.duration.hours}h${flight.duration.minutes.toString().padStart(2, '0')}</div>
-                        <div style="border-top: 2px solid #e2e8f0; width: 80px; margin: 5px 0;"></div>
-                        <div style="color: #64748b; font-size: 12px;">${flight.stops === 0 ? 'Direct' : '1 escale'}</div>
-                    </div>
-                    <div>
-                        <div style="font-weight: bold; font-size: 18px;">${formatTime(flight.arrivalTime)}</div>
-                        <div style="color: #64748b; font-size: 12px;">${document.getElementById('to').value || 'Arrivée'}</div>
-                    </div>
-                </div>
-            `;
-            
-            flightInfo.appendChild(airlineDiv);
-            flightInfo.appendChild(scheduleDiv);
-            
-            // Prix et bouton de réservation (droite)
-            const bookingDiv = document.createElement('div');
-            bookingDiv.style.cssText = `
-                text-align: right;
-                display: flex;
-                flex-direction: column;
-                align-items: flex-end;
-                gap: 10px;
-            `;
-            
-            const priceDiv = document.createElement('div');
-            priceDiv.innerHTML = `
-                <div style="font-size: 24px; font-weight: bold; color: #131a29ff;">${flight.price}€</div>
-                <div style="color: #151b24ff; font-size: 12px;">${flight.class} • Par personne</div>
-            `;
-            
-            const bookButton = document.createElement('button');
-            bookButton.textContent = 'Réserver ce vol';
-            bookButton.style.cssText = `
-                background: #0d121cff;
-                color: white;
-                border: none;
-                padding: 12px 24px;
-                border-radius: 6px;
-                font-weight: bold;
-                cursor: pointer;
-                transition: background 0.3s ease;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            `;
-            
-            bookButton.onmouseenter = () => {
-                bookButton.style.background = '#0f1525ff';
-            };
-            
-            bookButton.onmouseleave = () => {
-                bookButton.style.background = '#0c121eff';
-            };
-            
-            bookButton.onclick = () => {
-                alert(`✅ Vol ${flight.flightNumber} réservé !\n\nDétails :\n• Compagnie : ${flight.airline}\n• Passagers : ${passengers}\n• Prix total : ${flight.price}€\n\nMerci pour votre confiance !`);
-            };
-            
-            bookingDiv.appendChild(priceDiv);
-            bookingDiv.appendChild(bookButton);
-            
-            flightElement.appendChild(flightInfo);
-            flightElement.appendChild(bookingDiv);
-            
-            return flightElement;
-        }
-
+        // Fonction pour créer un élément de vol
+function createFlightElement(flight, passengers) {
+    const flightElement = document.createElement('div');
+    flightElement.style.cssText = `
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s ease;
+        position: relative;
+    `;
+    
+    if (flight.featured) {
+        flightElement.style.borderLeft = '4px solid #2563eb';
+        flightElement.style.background = 'linear-gradient(135deg, #f8fafc, white)';
+    }
+    
+    flightElement.onmouseenter = () => {
+        flightElement.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+        flightElement.style.transform = 'translateY(-2px)';
+    };
+    
+    flightElement.onmouseleave = () => {
+        flightElement.style.boxShadow = 'none';
+        flightElement.style.transform = 'translateY(0)';
+    };
+    
+    // Format des heures
+    const formatTime = (date) => {
+        return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    };
+    
+    // Badge recommandé
+    if (flight.featured) {
+        const badge = document.createElement('div');
+        badge.textContent = '⭐ Recommandé';
+        badge.style.cssText = `
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            background: #2563eb;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        `;
+        flightElement.appendChild(badge);
+    }
+    
+    // Informations du vol (gauche)
+    const flightInfo = document.createElement('div');
+    flightInfo.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    `;
+    
+    // Compagnie aérienne
+    const airlineDiv = document.createElement('div');
+    airlineDiv.innerHTML = `
+        <div style="font-weight: bold; font-size: 16px;">${flight.airline}</div>
+        <div style="color: #64748b; font-size: 14px;">${flight.flightNumber}</div>
+    `;
+    
+    // Horaires
+    const scheduleDiv = document.createElement('div');
+    scheduleDiv.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div>
+                <div style="font-weight: bold; font-size: 18px;">${formatTime(flight.departureTime)}</div>
+                <div style="color: #64748b; font-size: 12px;">${document.getElementById('from').value || 'Départ'}</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="color: #64748b; font-size: 12px;">${flight.duration.hours}h${flight.duration.minutes.toString().padStart(2, '0')}</div>
+                <div style="border-top: 2px solid #e2e8f0; width: 80px; margin: 5px 0;"></div>
+                <div style="color: #64748b; font-size: 12px;">${flight.stops === 0 ? 'Direct' : '1 escale'}</div>
+            </div>
+            <div>
+                <div style="font-weight: bold; font-size: 18px;">${formatTime(flight.arrivalTime)}</div>
+                <div style="color: #64748b; font-size: 12px;">${document.getElementById('to').value || 'Arrivée'}</div>
+            </div>
+        </div>
+    `;
+    
+    flightInfo.appendChild(airlineDiv);
+    flightInfo.appendChild(scheduleDiv);
+    
+    // Prix et bouton de réservation (droite)
+    const bookingDiv = document.createElement('div');
+    bookingDiv.style.cssText = `
+        text-align: right;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 10px;
+    `;
+    
+    const priceDiv = document.createElement('div');
+    priceDiv.innerHTML = `
+        <div style="font-size: 24px; font-weight: bold; color: #131a29ff;">${flight.price}€</div>
+        <div style="color: #151b24ff; font-size: 12px;">${flight.class} • Par personne</div>
+    `;
+    
+    const bookButton = document.createElement('button');
+    bookButton.textContent = 'Réserver ce vol';
+    bookButton.style.cssText = `
+        background: #0d121cff;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    `;
+    
+    bookButton.onmouseenter = () => {
+        bookButton.style.background = '#0f1525ff';
+    };
+    
+    bookButton.onmouseleave = () => {
+        bookButton.style.background = '#0c121eff';
+    };
+    
+    // MODIFICATION : Redirection vers reservation.php avec les paramètres
+    bookButton.onclick = () => {
+        // Récupérer les données du formulaire
+        const from = document.getElementById('from').value;
+        const to = document.getElementById('to').value;
+        const departure = document.getElementById('departure').value;
+        const returnDate = document.getElementById('return').value;
+        const passengers = document.getElementById('passengers').value;
+        const flightClass = document.getElementById('class').value;
+        
+        // Créer les paramètres URL
+        const params = new URLSearchParams({
+            airline: flight.airline,
+            flight_number: flight.flightNumber,
+            from: from,
+            to: to,
+            departure_date: departure,
+            return_date: returnDate,
+            passengers: passengers,
+            class: flightClass,
+            price: flight.price
+        });
+        
+        // Redirection vers la page de réservation
+        window.location.href = 'reservation.php?' + params.toString();
+    };
+    
+    bookingDiv.appendChild(priceDiv);
+    bookingDiv.appendChild(bookButton);
+    
+    flightElement.appendChild(flightInfo);
+    flightElement.appendChild(bookingDiv);
+    
+    return flightElement;
+}
         // Ajouter le style pour l'animation du message
         const style = document.createElement('style');
         style.textContent = `
