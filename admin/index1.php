@@ -80,7 +80,7 @@ $nouveaux_clients = $stmt->fetch(PDO::FETCH_ASSOC)['nouveaux_clients'] ?? 0;
         <div class="main-banner owl-carousel owl-theme">
             <div class="item banner-1">
                 <div class="header-text">
-                    <h2>Connectez-vous à votre compte</h2>
+                    <h2>Bienvenue chez JetReserve</h2>
                 </div>
             </div>
             <div class="item banner-2">
