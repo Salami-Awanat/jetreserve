@@ -34,6 +34,7 @@ if (isset($_POST['inscrire'])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
     <link rel="stylesheet" href="style1.css">
+    <link rel="stylesheet" href="auth-styles.css">
 </head>
 <body>
 <header>
@@ -93,28 +94,83 @@ if (isset($_POST['inscrire'])) {
     </div> <!-- Fermeture correcte de la div main-banner-container -->
     
     <section class="auth-section">
-       <div class="auth-container">
-        <h2>Créer un compte <span style="color:#00c3ff;">JetReserve</span></h2>
-        <?php if (!empty($message)) echo "<div class='message'>$message</div>"; ?>
+        <div class="auth-container">
+            <div class="text-center mb-4">
+                <i class="fas fa-user-plus fa-3x text-primary mb-3"></i>
+                <h2>Créez votre compte <span style="color:#e74c3c;">JetReserve</span></h2>
+                <p class="text-muted">Rejoignez-nous pour réserver vos vols en toute simplicité</p>
+            </div>
+            
+            <?php if (!empty($message)) echo "<div class='message'>$message</div>"; ?>
 
-        <form method="post">
-            <label>Nom :</label>
-            <input type="text" name="nom" placeholder="Votre nom" required>
+            <form method="post">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="nom">Nom :</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-user"></i>
+                            </span>
+                            <input type="text" id="nom" name="nom" placeholder="Votre nom" required>
+                        </div>
+                    </div>
 
-            <label>Prénom :</label>
-            <input type="text" name="prenom" placeholder="Votre prénom" required>
+                    <div class="col-md-6 mb-3">
+                        <label for="prenom">Prénom :</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-user"></i>
+                            </span>
+                            <input type="text" id="prenom" name="prenom" placeholder="Votre prénom" required>
+                        </div>
+                    </div>
+                </div>
 
-            <label>Email :</label>
-            <input type="email" name="email" placeholder="Votre adresse email" required>
+                <div class="mb-3">
+                    <label for="email">Email :</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-envelope"></i>
+                        </span>
+                        <input type="email" id="email" name="email" placeholder="exemple@email.com" required>
+                    </div>
+                </div>
 
-            <label>Mot de passe :</label>
-            <input type="password" name="password" placeholder="Choisissez un mot de passe" required>
+                <div class="mb-3">
+                    <label for="password">Mot de passe :</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input type="password" id="password" name="password" placeholder="Votre mot de passe" required>
+                    </div>
+                    <small class="form-text text-muted">Le mot de passe doit contenir au moins 8 caractères</small>
+                </div>
 
-            <button type="submit" name="inscrire">Créer un compte</button>
-        </form>
+                <div class="mb-4">
+                    <label for="confirm_password">Confirmez le mot de passe :</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirmez votre mot de passe" required>
+                    </div>
+                </div>
 
-        <p>Déjà un compte ? <a href="connexion.php">Connectez-vous</a></p>
-        <p><a href="../index.php">⬅ Retour à l'accueil</a></p>
+                <div class="mb-4 form-check">
+                    <input type="checkbox" id="terms" required>
+                    <label for="terms">J'accepte les <a href="#">conditions d'utilisation</a> et la <a href="#">politique de confidentialité</a></label>
+                </div>
+
+                <button type="submit" name="inscrire">
+                    <i class="fas fa-user-plus me-2"></i>S'inscrire
+                </button>
+            </form>
+
+            <div class="form-footer">
+                <p>Déjà inscrit ? <a href="connexion.php" class="fw-bold">Connectez-vous</a></p>
+                <p><a href="../index.php"><i class="fas fa-home me-1"></i>Retour à l'accueil</a></p>
+            </div>
         </div>
     </section>
      <!-- #footer-->
