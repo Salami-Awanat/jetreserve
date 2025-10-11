@@ -54,6 +54,7 @@ if (isset($_POST['connecter'])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
     <link rel="stylesheet" href="style1.css">
+    <link rel="stylesheet" href="auth-styles.css">
 </head>
 <body>
     <!-- Header -->
@@ -116,21 +117,52 @@ if (isset($_POST['connecter'])) {
     <!-- Section de connexion -->
     <section class="auth-section">
         <div class="auth-container">
-            <h2>Connectez-vous à votre compte <span style="color:#e74c3c;">JetReserve</span></h2>
+            <div class="text-center mb-4">
+                <i class="fas fa-user-circle fa-3x text-primary mb-3"></i>
+                <h2>Connectez-vous à votre compte <span style="color:#e74c3c;">JetReserve</span></h2>
+                <p class="text-muted">Accédez à votre espace personnel</p>
+            </div>
+            
             <?php if (!empty($message)) echo "<div class='message'>$message</div>"; ?>
 
             <form method="post">
-                <label>Email :</label>
-                <input type="email" name="email" placeholder="Votre adresse email" required>
+                <div class="mb-4">
+                    <label for="email">Adresse email :</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-envelope"></i>
+                        </span>
+                        <input type="email" id="email" name="email" placeholder="exemple@email.com" required>
+                    </div>
+                </div>
 
-                <label>Mot de passe :</label>
-                <input type="password" name="password" placeholder="Votre mot de passe" required>
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between">
+                        <label for="password">Mot de passe :</label>
+                        <a href="#" class="small">Mot de passe oublié?</a>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input type="password" id="password" name="password" placeholder="Votre mot de passe" required>
+                    </div>
+                </div>
 
-                <button type="submit" name="connecter">Se connecter</button>
+                <div class="mb-4 form-check">
+                    <input type="checkbox" id="remember">
+                    <label for="remember">Se souvenir de moi</label>
+                </div>
+
+                <button type="submit" name="connecter">
+                    <i class="fas fa-sign-in-alt me-2"></i>Se connecter
+                </button>
             </form>
 
-            <p>Pas encore de compte ? <a href="inscription.php">Inscrivez-vous</a></p>
-            <p><a href="../index.php">⬅ Retour à l'accueil</a></p>
+            <div class="form-footer">
+                <p>Pas encore de compte ? <a href="inscription.php" class="fw-bold">Inscrivez-vous</a></p>
+                <p><a href="../index.php">⬅ Retour à l'accueil</a></p>
+            </div>
         </div>
     </section>
 
