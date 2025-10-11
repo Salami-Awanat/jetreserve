@@ -2,8 +2,9 @@
 session_start();
 require_once '../includes/connexion.php';
 
-// Récupération de tous les utilisateurs
-$stmt = $bdd->query("SELECT * FROM users ORDER BY date_creation DESC");
+// ✅ Récupération uniquement des utilisateurs ayant le rôle "client"
+$stmt = $bdd->prepare("SELECT * FROM users WHERE role = 'client' ORDER BY date_creation DESC");
+$stmt->execute();
 $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Récupération des détails d'un utilisateur spécifique si demandé
@@ -11,14 +12,14 @@ $utilisateur_details = null;
 $reservations_utilisateur = [];
 
 if (isset($_GET['id'])) {
-    $id_utilisateur = $_GET['id'];
+    $id_user = $_GET['id']; // ✅ Correction : variable uniforme
     
-    // Récupération des détails de l'utilisateur
-    $stmt = $bdd->prepare("SELECT * FROM users WHERE id_user = ?");
+    // Détails de l'utilisateur
+    $stmt = $bdd->prepare("SELECT * FROM users WHERE id_user = ? AND role = 'client'");
     $stmt->execute([$id_user]);
     $utilisateur_details = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    // Récupération des réservations de l'utilisateur
+    // Réservations associées à cet utilisateur
     $stmt = $bdd->prepare("
         SELECT r.*, v.numero_vol, v.ville_depart, v.ville_arrivee, v.date_depart, v.heure_depart, v.compagnie
         FROM reservations r
@@ -30,7 +31,7 @@ if (isset($_GET['id'])) {
     $reservations_utilisateur = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// Traitement de la désactivation/activation d'un compte
+// ✅ Traitement de l’activation/désactivation d’un compte
 if (isset($_POST['action'])) {
     if ($_POST['action'] === 'toggle_status' && isset($_POST['id'])) {
         $id = $_POST['id'];
@@ -39,11 +40,11 @@ if (isset($_POST['action'])) {
         // Bascule entre 'actif' et 'inactif'
         $newStatus = ($currentStatus === 'actif') ? 'inactif' : 'actif';
 
-        // ✅ Correction du nom de table et des colonnes
+        // Mise à jour du statut
         $stmt = $bdd->prepare("UPDATE users SET statut = ? WHERE id_user = ?");
         $stmt->execute([$newStatus, $id]);
 
-        // Redirection pour éviter la soumission multiple du formulaire
+        // Redirection pour éviter la double soumission
         header("Location: utilisateurs.php" . (isset($_GET['id']) ? "?id=" . $_GET['id'] : ""));
         exit;
     }
