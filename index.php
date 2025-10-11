@@ -43,26 +43,31 @@
             <div class="item banner-1">
                 <div class="header-text">
                     <h2>Réservez votre vol pas cher</h2>
+                    <p>Comparez les prix de plus de 600 compagnies aériennes</p>
                 </div>
             </div>
             <div class="item banner-2">
                 <div class="header-text">
-                    <h2>Découvrez des destinations uniques </h2>
+                    <h2>Découvrez des destinations uniques</h2>
+                    <p>Des offres exclusives vers les plus belles villes du monde</p>
                 </div>
             </div>
             <div class="item banner-3">
                 <div class="header-text">
                     <h2>Explorez de nouveaux horizons</h2>
+                    <p>Voyagez en toute sécurité avec nos garanties</p>
                 </div>
             </div>
             <div class="item banner-4">
                 <div class="header-text">
                     <h2>Voyagez en toute sérénité</h2>
+                    <p>Assistance 24h/24 et 7j/7 pendant votre voyage</p>
                 </div>
             </div>
             <div class="item banner-5">
                 <div class="header-text">
                     <h2>Des offres exceptionnelles vous attendent</h2>
+                    <p>Jusqu'à -60% sur les vols dernière minute</p>
                 </div>
             </div>
         </div>
@@ -77,19 +82,19 @@
             <form id="searchForm">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="from"><i class="fas fa-plane-departure"></i> De</label>
-                        <input type="text" id="from" class="form-control" placeholder="lieu de départ">
+                        <label for="from"><i class="fas fa-plane-departure"></i> Départ de</label>
+                        <input type="text" id="from" class="form-control" placeholder="Ville ou aéroport de départ">
                     </div>
                     <div class="form-group">
-                        <label for="to"><i class="fas fa-plane-arrival"></i> Vers</label>
-                        <input type="text" id="to" class="form-control" placeholder="Destination">
+                        <label for="to"><i class="fas fa-plane-arrival"></i> Destination</label>
+                        <input type="text" id="to" class="form-control" placeholder="Ville ou aéroport d'arrivée">
                     </div>
                     <div class="form-group">
-                        <label for="departure"><i class="far fa-calendar-alt"></i> Départ le</label>
+                        <label for="departure"><i class="far fa-calendar-alt"></i> Date de départ</label>
                         <input type="date" id="departure" class="form-control">
                     </div>
                     <div class="form-group">
-                        <label for="return"><i class="far fa-calendar-alt"></i> Retour le</label>
+                        <label for="return"><i class="far fa-calendar-alt"></i> Date de retour</label>
                         <input type="date" id="return" class="form-control">
                     </div>
                 </div>
@@ -121,12 +126,12 @@
                     </div>
                 </div>
                 <button type="submit" class="search-btn">
-                    <i class="fas fa-search"></i> Rechercher un vol
+                    <i class="fas fa-search"></i> Rechercher des vols
                 </button>
             </form>
             <div style="text-align: center; margin-top: 15px;">
                 <a href="#" style="color: var(--info); text-decoration: none; font-weight: 600;">
-                    <i class="fas fa-hotel"></i> Économisez jusqu'à 40% avec Vol 
+                    <i class="fas fa-hotel"></i> Économisez jusqu'à 40% avec Vol + Hôtel
                 </a>
             </div>
         </div>
@@ -137,49 +142,64 @@
 
         <!-- Offers Section -->
         <section class="offers">
-            <h2 class="section-title">Destinations populaires</h2>
+            <h2 class="section-title">Destinations tendance</h2>
+            <p style="text-align: center; color: var(--secondary); margin-bottom: 30px;">
+                Découvrez nos destinations les plus populaires avec des prix imbattables
+            </p>
             <div class="offers-grid">
                 <!-- Offer 1 -->
                 <div class="card">
+                    <div class="card-badge">Populaire</div>
                     <img src="images/paris.jpg" alt="Paris">
                     <div class="card-content">
                         <h3>Paris, France</h3>
                         <p>Découvrez la ville lumière avec nos offres spéciales</p>
                         <div class="price">À partir de 129€</div>
-                        <button class="btn btn-primary btn-sm offer-btn" data-destination="Paris, France">Voir l'offre</button>
+                        <button class="btn btn-primary btn-sm offer-btn" data-destination="Paris, France">
+                            <i class="fas fa-eye"></i> Voir les vols
+                        </button>
                     </div>
                 </div>
                 
                 <!-- Offer 2 -->
                 <div class="card">
+                    <div class="card-badge">Coup de cœur</div>
                     <img src="images/italy.jpg" alt="Rome">
                     <div class="card-content">
                         <h3>Rome, Italie</h3>
                         <p>Explorez la cité éternelle et ses trésors historiques</p>
                         <div class="price">À partir de 159€</div>
-                        <button class="btn btn-primary btn-sm offer-btn" data-destination="Rome, Italie">Voir l'offre</button>
+                        <button class="btn btn-primary btn-sm offer-btn" data-destination="Rome, Italie">
+                            <i class="fas fa-eye"></i> Voir les vols
+                        </button>
                     </div>
                 </div>
                 
                 <!-- Offer 3 -->
                 <div class="card">
+                    <div class="card-badge">Exotique</div>
                     <img src="images/inde.jpg" alt="Bali">
                     <div class="card-content">
                         <h3>Bali, Indonésie</h3>
                         <p>Évadez-vous vers cette île paradisiaque</p>
                         <div class="price">À partir de 699€</div>
-                        <button class="btn btn-primary btn-sm offer-btn" data-destination="Bali, Indonésie">Voir l'offre</button>
+                        <button class="btn btn-primary btn-sm offer-btn" data-destination="Bali, Indonésie">
+                            <i class="fas fa-eye"></i> Voir les vols
+                        </button>
                     </div>
                 </div>
                 
                 <!-- Offer 4 -->
                 <div class="card">
+                    <div class="card-badge">Ville</div>
                     <img src="images/usa.jpg" alt="New York">
                     <div class="card-content">
                         <h3>New York, USA</h3>
                         <p>Vivez l'expérience new-yorkaise</p>
                         <div class="price">À partir de 459€</div>
-                        <button class="btn btn-primary btn-sm offer-btn" data-destination="New York, USA">Voir l'offre</button>
+                        <button class="btn btn-primary btn-sm offer-btn" data-destination="New York, USA">
+                            <i class="fas fa-eye"></i> Voir les vols
+                        </button>
                     </div>
                 </div>
             </div>
@@ -187,15 +207,32 @@
 
         <!-- Madeira Section -->
         <section class="madeira-section">
-            <h2 class="section-title">Découvrez nos destinations coup de cœur</h2>
+            <h2 class="section-title">Destination coup de cœur de la semaine</h2>
             <div class="madeira-content">
                 <div class="madeira-image">
                     <img src="images/madere.jpg" alt="Madère">
+                    <div class="destination-tag">Meilleure destination 2024</div>
                 </div>
                 <div class="madeira-text">
-                    <h3>Découvrez Madère</h3>
+                    <h3>Découvrez Madère, la perle de l'Atlantique</h3>
                     <p>Quand vous rêvez de journées sans fin, vous rêvez de Madère. Cette île portugaise située dans l'océan Atlantique offre des paysages à couper le souffle, un climat printanier toute l'année et une culture riche et authentique.</p>
-                    <button class="btn btn-primary offer-btn" data-destination="Madère, Portugal">Je réserve</button>
+                    <div class="destination-features">
+                        <div class="feature-item">
+                            <i class="fas fa-sun"></i>
+                            <span>Climat idéal toute l'année</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-utensils"></i>
+                            <span>Gastronomie exceptionnelle</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-hiking"></i>
+                            <span>Randonnées spectaculaires</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary offer-btn" data-destination="Madère, Portugal">
+                        <i class="fas fa-plane"></i> Réserver maintenant
+                    </button>
                 </div>
             </div>
         </section>
@@ -203,36 +240,55 @@
         <!-- Features Section -->
         <section class="features">
             <div class="container">
-                <h2 class="section-title">Pourquoi choisir JetReserve ?</h2>
+                <h2 class="section-title">Pourquoi réserver avec JetReserve ?</h2>
+                <p style="text-align: center; color: var(--secondary); margin-bottom: 40px;">
+                    Des services premium pour une expérience de voyage exceptionnelle
+                </p>
                 <div class="features-grid">
                     <div class="feature">
                         <div class="feature-icon">
                             <i class="fas fa-percentage"></i>
                         </div>
                         <h3>Meilleur prix garanti</h3>
-                        <p>Nous comparons des centaines de sites pour vous trouver les meilleures offres</p>
+                        <p>Nous comparons des centaines de sites pour vous trouver les meilleures offres avec notre garantie prix</p>
                     </div>
                     <div class="feature">
                         <div class="feature-icon">
                             <i class="fas fa-shield-alt"></i>
                         </div>
-                        <h3>Paiement sécurisé</h3>
-                        <p>Vos transactions sont protégées par les meilleures technologies de sécurité</p>
+                        <h3>Paiement 100% sécurisé</h3>
+                        <p>Vos transactions sont protégées par les dernières technologies de cryptage bancaire</p>
                     </div>
                     <div class="feature">
                         <div class="feature-icon">
                             <i class="fas fa-headset"></i>
                         </div>
-                        <h3>Service client 24/7</h3>
-                        <p>Notre équipe est disponible à tout moment pour vous assister</p>
+                        <h3>Assistance premium 24/7</h3>
+                        <p>Notre équipe dédiée est disponible à tout moment pour vous assister avant, pendant et après votre voyage</p>
                     </div>
                     <div class="feature">
                         <div class="feature-icon">
                             <i class="fas fa-mobile-alt"></i>
                         </div>
                         <h3>Application mobile</h3>
-                        <p>Gérez vos réservations où que vous soyez avec notre site</p>
+                        <p>Gérez vos réservations, recevez des alertes prix et vos billets électroniques sur mobile</p>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Newsletter Section -->
+        <section class="newsletter-section">
+            <div class="container">
+                <div class="newsletter-content">
+                    <h3>Ne manquez aucune offre exceptionnelle</h3>
+                    <p>Inscrivez-vous à notre newsletter et soyez le premier informé de nos promotions exclusives</p>
+                    <form class="newsletter-form">
+                        <input type="email" placeholder="Votre adresse email" required>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> S'abonner
+                        </button>
+                    </form>
                 </div>
             </div>
         </section>
@@ -244,51 +300,68 @@
             <div class="footer-grid">
                 <div class="footer-column">
                     <h4>JetReserve</h4>
-                    <ul class="footer-links">
-                        <li><a href="#">À propos de nous</a></li>
-                        <li><a href="#">Carrières</a></li>
-                        <li><a href="#">Presse</a></li>
-                        <li><a href="#">Blog</a></li>
-                        <li><a href="#">Aide</a></li>
-                    </ul>
+                    <p style="color: #cbd5e1; margin-bottom: 20px; font-size: 14px;">
+                        Votre partenaire de confiance pour des voyages inoubliables depuis 2023.
+                    </p>
+                    <div class="footer-links">
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> À propos de nous</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Carrières</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Presse</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Blog voyage</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Centre d'aide</a></li>
+                    </div>
                 </div>
                 <div class="footer-column">
-                    <h4>Produits</h4>
-                    <ul class="footer-links">
-                        <li><a href="#">Vols</a></li>
-                        <li><a href="#">Hôtels</a></li>
-                        <li><a href="#">Vols + Hôtels</a></li>
-                        <li><a href="#">Location de voiture</a></li>
-                        <li><a href="#">Activités</a></li>
-                    </ul>
+                    <h4>Nos services</h4>
+                    <div class="footer-links">
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Vols réguliers</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Vols + Hôtels</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Location de voiture</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Activités & excursions</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Assurances voyage</a></li>
+                    </div>
                 </div>
                 <div class="footer-column">
-                    <h4>Informations</h4>
-                    <ul class="footer-links">
-                        <li><a href="#">Conditions générales</a></li>
-                        <li><a href="#">Politique de confidentialité</a></li>
-                        <li><a href="#">Cookies</a></li>
-                        <li><a href="#">Mentions légales</a></li>
-                        <li><a href="#">Plan du site</a></li>
-                    </ul>
+                    <h4>Informations légales</h4>
+                    <div class="footer-links">
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Conditions générales</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Politique de confidentialité</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Cookies</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Mentions légales</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Plan du site</a></li>
+                    </div>
                 </div>
                 <div class="footer-column">
-                    <h4>Contact</h4>
-                    <ul class="footer-links">
-                        <li><a href="#">Service client</a></li>
-                        <li><a href="#">Nous contacter</a></li>
-                        <li><a href="#">Centres d'aide</a></li>
-                        <li><a href="#">Assistance</a></li>
-                    </ul>
+                    <h4>Contact & support</h4>
+                    <div class="contact-info-footer">
+                        <div class="contact-item">
+                            <i class="fas fa-phone"></i>
+                            <span>+33 1 23 45 67 89</span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-envelope"></i>
+                            <span>contact@jetreserve.com</span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-clock"></i>
+                            <span>Lun-Ven: 8h-20h • Sam-Dim: 9h-18h</span>
+                        </div>
+                    </div>
+                    <div class="footer-links">
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Service client</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Nous contacter</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Réclamations</a></li>
+                    </div>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2023 JetReserve. Tous droits réservés.</p>
+                <p>&copy; 2023 JetReserve. Tous droits réservés. | SAS au capital de 1.000.000€ | RCS Paris 123 456 789</p>
                 <div class="social-icons">
-                    <a href="#"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-instagram"></i></a>
-                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="#" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#" title="YouTube"><i class="fab fa-youtube"></i></a>
                 </div>
             </div>
         </div>
@@ -391,9 +464,9 @@
                     toField.style.boxShadow = '';
                 }, 2000);
                 
-                
+                // Afficher un message de confirmation professionnel
                 const confirmation = document.createElement('div');
-                confirmation.textContent = `Destination "${destination}" ajoutée à votre recherche!`;
+                confirmation.textContent = `✨ Destination "${destination}" ajoutée à votre recherche !`;
                 confirmation.style.cssText = `
                     position: fixed;
                     top: 20px;
@@ -401,10 +474,12 @@
                     background: #2f3543ff; 
                     color: white;
                     padding: 15px 20px;
-                    border-radius: 5px;
+                    border-radius: 8px;
                     z-index: 1000;
                     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
                     animation: fadeInOut 3s ease-in-out;
+                    font-weight: 500;
+                    border-left: 4px solid #2563eb;
                 `;
                 document.body.appendChild(confirmation);
                 
@@ -433,15 +508,25 @@
             
             // Titre des résultats
             const title = document.createElement('h2');
-            title.textContent = `Vols de ${from} à ${to}`;
+            title.textContent = `✈️ Vols de ${from} à ${to}`;
             title.style.cssText = `
                 color: #2563eb;
-                margin-bottom: 20px;
+                margin-bottom: 10px;
                 text-align: center;
                 font-size: 24px;
             `;
             
+            const subtitle = document.createElement('p');
+            subtitle.textContent = `Nous avons trouvé les meilleures options pour votre voyage`;
+            subtitle.style.cssText = `
+                color: #64748b;
+                text-align: center;
+                margin-bottom: 20px;
+                font-size: 14px;
+            `;
+            
             resultsContainer.appendChild(title);
+            resultsContainer.appendChild(subtitle);
             
             // Générer des vols fictifs
             const flights = generateMockFlights(from, to, departure, flightClass);
@@ -529,7 +614,8 @@
                     duration: { hours: durationHours, minutes: durationMinutes },
                     price: Math.round(basePrice),
                     class: flightClass,
-                    stops: Math.random() > 0.7 ? 1 : 0 // 30% de chance d'avoir une escale
+                    stops: Math.random() > 0.7 ? 1 : 0, // 30% de chance d'avoir une escale
+                    featured: i === 0 // Premier vol est recommandé
                 });
             }
             
@@ -549,7 +635,13 @@
                 justify-content: space-between;
                 align-items: center;
                 transition: all 0.3s ease;
+                position: relative;
             `;
+            
+            if (flight.featured) {
+                flightElement.style.borderLeft = '4px solid #2563eb';
+                flightElement.style.background = 'linear-gradient(135deg, #f8fafc, white)';
+            }
             
             flightElement.onmouseenter = () => {
                 flightElement.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
@@ -565,6 +657,24 @@
             const formatTime = (date) => {
                 return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
             };
+            
+            // Badge recommandé
+            if (flight.featured) {
+                const badge = document.createElement('div');
+                badge.textContent = '⭐ Recommandé';
+                badge.style.cssText = `
+                    position: absolute;
+                    top: -10px;
+                    left: 20px;
+                    background: #2563eb;
+                    color: white;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    font-weight: 600;
+                `;
+                flightElement.appendChild(badge);
+            }
             
             // Informations du vol (gauche)
             const flightInfo = document.createElement('div');
@@ -617,20 +727,23 @@
             const priceDiv = document.createElement('div');
             priceDiv.innerHTML = `
                 <div style="font-size: 24px; font-weight: bold; color: #131a29ff;">${flight.price}€</div>
-                <div style="color: #151b24ff; font-size: 12px;">${flight.class}</div>
+                <div style="color: #151b24ff; font-size: 12px;">${flight.class} • Par personne</div>
             `;
             
             const bookButton = document.createElement('button');
-            bookButton.textContent = 'Réserver';
+            bookButton.textContent = 'Réserver ce vol';
             bookButton.style.cssText = `
                 background: #0d121cff;
                 color: white;
                 border: none;
-                padding: 10px 20px;
+                padding: 12px 24px;
                 border-radius: 6px;
                 font-weight: bold;
                 cursor: pointer;
                 transition: background 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 8px;
             `;
             
             bookButton.onmouseenter = () => {
@@ -642,7 +755,7 @@
             };
             
             bookButton.onclick = () => {
-                alert(`Réservation du vol ${flight.flightNumber} avec ${flight.airline} pour ${passengers} !`);
+                alert(`✅ Vol ${flight.flightNumber} réservé !\n\nDétails :\n• Compagnie : ${flight.airline}\n• Passagers : ${passengers}\n• Prix total : ${flight.price}€\n\nMerci pour votre confiance !`);
             };
             
             bookingDiv.appendChild(priceDiv);
@@ -662,6 +775,100 @@
                 20% { opacity: 1; transform: translateY(0); }
                 80% { opacity: 1; transform: translateY(0); }
                 100% { opacity: 0; transform: translateY(-20px); }
+            }
+            
+            .card-badge {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                background: #2563eb;
+                color: white;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                font-weight: 600;
+                z-index: 2;
+            }
+            
+            .destination-tag {
+                position: absolute;
+                bottom: 20px;
+                left: 20px;
+                background: rgba(37, 99, 235, 0.9);
+                color: white;
+                padding: 8px 12px;
+                border-radius: 4px;
+                font-weight: 600;
+            }
+            
+            .destination-features {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                margin: 20px 0;
+            }
+            
+            .feature-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                color: #64748b;
+            }
+            
+            .feature-item i {
+                color: #2563eb;
+                width: 20px;
+            }
+            
+            .newsletter-section {
+                background: linear-gradient(135deg, #1e293b, #374151);
+                color: white;
+                padding: 50px 0;
+                margin-top: 50px;
+                border-radius: 12px;
+            }
+            
+            .newsletter-content {
+                text-align: center;
+                max-width: 600px;
+                margin: 0 auto;
+            }
+            
+            .newsletter-content h3 {
+                font-size: 28px;
+                margin-bottom: 15px;
+            }
+            
+            .newsletter-form {
+                display: flex;
+                gap: 10px;
+                margin-top: 20px;
+            }
+            
+            .newsletter-form input {
+                flex: 1;
+                padding: 12px 15px;
+                border: none;
+                border-radius: 6px;
+                font-size: 14px;
+            }
+            
+            .contact-info-footer {
+                margin-bottom: 20px;
+            }
+            
+            .contact-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 8px;
+                color: #cbd5e1;
+                font-size: 14px;
+            }
+            
+            .contact-item i {
+                width: 16px;
+                color: #2563eb;
             }
         `;
         document.head.appendChild(style);
