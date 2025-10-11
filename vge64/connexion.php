@@ -6,25 +6,42 @@ $message = "";
 
 if (isset($_POST['connecter'])) {
     $email = trim($_POST['email']);
-    $mdp = $_POST['password'];
+    $mdp = $_POST['password'] ?? '';
 
-    $query = $bdd->prepare("SELECT * FROM users WHERE email = ?");
-    $query->execute([$email]);
-    $user = $query->fetch();
+    // Requête SQL : utilisateur avec email et mot de passe (en clair)
+    $query = $bdd->prepare("SELECT * FROM users WHERE email = ? AND password = ?");
+    $query->execute([$email, $mdp]);
+    $user = $query->fetch(PDO::FETCH_ASSOC);
 
-    if ($user && password_verify($mdp, $user['password'])) {
-        $_SESSION['id_user'] = $user['id'];
+    if ($user) {
+        // Connexion réussie → enregistrer les infos
+        $_SESSION['id_user'] = $user['id_user'];
         $_SESSION['prenom'] = $user['prenom'];
         $_SESSION['nom'] = $user['nom'];
         $_SESSION['email'] = $user['email'];
+        $_SESSION['role'] = $user['role'];
+        $_SESSION['statut'] = $user['statut'];
 
-        header("Location: index.php");
-        exit;
+        // Vérifie si le compte est actif
+        if ($user['statut'] === 'inactif') {
+            $message = "⚠️ Votre compte est inactif. Veuillez contacter l'administrateur.";
+        } else {
+            // Redirection selon le rôle
+            if ($user['role'] === 'admin') {
+                header("Location: ../admin/index1.php");
+                exit;
+            } else {
+                header("Location: index2.php");
+                exit;
+            }
+        }
     } else {
         $message = "❌ Email ou mot de passe incorrect.";
     }
 }
 ?>
+
+
 
 <!DOCTYPE html>
 <html lang="fr">
@@ -107,7 +124,7 @@ if (isset($_POST['connecter'])) {
                 <input type="email" name="email" placeholder="Votre adresse email" required>
 
                 <label>Mot de passe :</label>
-                <input type="password" name="motdepasse" placeholder="Votre mot de passe" required>
+                <input type="password" name="password" placeholder="Votre mot de passe" required>
 
                 <button type="submit" name="connecter">Se connecter</button>
             </form>
