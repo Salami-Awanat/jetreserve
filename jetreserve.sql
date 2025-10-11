@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3306
--- Généré le : mar. 07 oct. 2025 à 22:27
+-- Généré le : sam. 11 oct. 2025 à 03:06
 -- Version du serveur : 5.7.40
 -- Version de PHP : 8.0.26
 
@@ -139,6 +139,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `telephone` varchar(20) DEFAULT NULL,
   `password` varchar(255) NOT NULL,
   `role` enum('client','admin') DEFAULT 'client',
+  `statut` enum('actif','inactif') NOT NULL,
   `date_creation` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_user`),
   UNIQUE KEY `email` (`email`)
@@ -148,10 +149,10 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- Déchargement des données de la table `users`
 --
 
-INSERT INTO `users` (`id_user`, `nom`, `prenom`, `email`, `telephone`, `password`, `role`, `date_creation`) VALUES
-(1, 'Salami', 'Awanat', 'awanatsalami.afo@gmail.com', '0700000001', 'password2005', 'client', '2025-10-07 22:26:46'),
-(2, 'Folashade', 'Arike', 'arike@gmail.com', '0700000002', 'password123', 'client', '2025-10-07 22:26:46'),
-(3, 'Radji', 'Sad', 'admin@test.com', '0700000000', 'adminpass2003', 'admin', '2025-10-07 22:26:46');
+INSERT INTO `users` (`id_user`, `nom`, `prenom`, `email`, `telephone`, `password`, `role`, `statut`, `date_creation`) VALUES
+(1, 'Salami', 'Awanat', 'awanatsalami.afo@gmail.com', '0700000001', 'password2005', 'client', 'actif', '2025-10-07 22:26:46'),
+(2, 'Folashade', 'Arike', 'arike@gmail.com', '0700000002', 'password123', 'client', 'actif', '2025-10-07 22:26:46'),
+(3, 'Radji', 'Sad', 'admin@test.com', '0700000000', 'adminpass2003', 'admin', 'actif', '2025-10-07 22:26:46');
 
 -- --------------------------------------------------------
 
