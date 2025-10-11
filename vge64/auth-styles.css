@@ -1,0 +1,276 @@
+/* ===== STYLES POUR LES PAGES D'AUTHENTIFICATION ===== */
+
+/* Section d'authentification */
+.auth-section {
+    padding: 60px 0;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    min-height: calc(100vh - 500px);
+    display: flex;
+    align-items: center;
+}
+
+.auth-container {
+    max-width: 500px;
+    margin: 0 auto;
+    background: var(--white);
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
+}
+
+/* En-tête des formulaires */
+.auth-container .text-center h2 {
+    color: var(--primary);
+    font-weight: 700;
+    margin-bottom: 10px;
+    font-size: 1.8rem;
+}
+
+.auth-container .text-center p {
+    color: var(--gray);
+    font-size: 1rem;
+}
+
+/* Icônes */
+.fa-user-plus, .fa-user-circle {
+    color: var(--primary) !important;
+}
+
+/* Formulaires */
+.auth-container form {
+    margin-top: 30px;
+}
+
+.auth-container label {
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 8px;
+    display: block;
+    font-size: 0.95rem;
+}
+
+/* Groupes d'input */
+.input-group {
+    position: relative;
+    margin-bottom: 5px;
+}
+
+.input-group-text {
+    background: linear-gradient(135deg, var(--primary), var(--info));
+    border: none;
+    color: var(--white);
+    padding: 12px 15px;
+    border-radius: 10px 0 0 10px !important;
+}
+
+.auth-container input[type="text"],
+.auth-container input[type="email"],
+.auth-container input[type="password"] {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid var(--border-color);
+    border-radius: 0 10px 10px 0;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: var(--white);
+    border-left: none;
+}
+
+.auth-container input[type="text"]:focus,
+.auth-container input[type="email"]:focus,
+.auth-container input[type="password"]:focus {
+    outline: none;
+    border-color: var(--info);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* Checkbox */
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 25px 0;
+}
+
+.form-check-input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.form-check-input:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.form-check-label {
+    font-size: 0.9rem;
+    color: var(--gray);
+    margin: 0;
+    cursor: pointer;
+}
+
+.form-check-label a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.form-check-label a:hover {
+    text-decoration: underline;
+}
+
+/* Bouton de soumission */
+.auth-container button[type="submit"] {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, var(--primary), var(--info));
+    color: var(--white);
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.auth-container button[type="submit"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(52, 152, 219, 0.3);
+}
+
+.auth-container button[type="submit"]:active {
+    transform: translateY(0);
+}
+
+/* Textes d'aide */
+.form-text {
+    font-size: 0.85rem;
+    color: var(--gray);
+    margin-top: 5px;
+}
+
+/* Lien mot de passe oublié */
+.small {
+    font-size: 0.85rem;
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.small:hover {
+    text-decoration: underline;
+}
+
+/* Pied de formulaire */
+.form-footer {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.form-footer p {
+    margin: 10px 0;
+    color: var(--gray);
+}
+
+.form-footer a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.form-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Messages d'alerte */
+.message {
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-weight: 500;
+    text-align: center;
+}
+
+.message:not(:empty) {
+    background: rgba(231, 76, 60, 0.1);
+    border: 1px solid var(--danger);
+    color: var(--danger);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .auth-section {
+        padding: 40px 20px;
+        min-height: calc(100vh - 400px);
+    }
+    
+    .auth-container {
+        padding: 30px 25px;
+        margin: 20px auto;
+    }
+    
+    .auth-container .text-center h2 {
+        font-size: 1.5rem;
+    }
+    
+    .main-banner .header-text h2 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-container {
+        padding: 25px 20px;
+    }
+    
+    .auth-container .text-center h2 {
+        font-size: 1.3rem;
+    }
+    
+    .auth-container input[type="text"],
+    .auth-container input[type="email"],
+    .auth-container input[type="password"] {
+        padding: 10px 12px;
+        font-size: 0.9rem;
+    }
+    
+    .auth-container button[type="submit"] {
+        padding: 12px;
+        font-size: 1rem;
+    }
+    
+    .form-check-label {
+        font-size: 0.85rem;
+    }
+}
+
+/* Animation pour les inputs */
+.input-group {
+    transition: transform 0.3s ease;
+}
+
+.input-group:focus-within {
+    transform: translateY(-2px);
+}
+
+/* Style pour les liens dans le footer du formulaire */
+.form-footer a.fw-bold {
+    font-weight: 700 !important;
+}
+
+/* Style spécifique pour la page de connexion */
+.auth-container .fa-sign-in-alt,
+.auth-container .fa-user-plus {
+    margin-right: 8px;
+}
+
+/* Adaptation des bannières pour les pages auth */
+.auth-section + footer {
+    margin-top: 0;
+}
