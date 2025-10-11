@@ -3,31 +3,15 @@ $(document).ready(function() {
     // Gestion des options supplémentaires
     $('input[type="checkbox"]').on('change', function() {
         updateSummary();
+        updateHiddenFields();
     });
 
-    // Formatage du numéro de carte
-    $('#card_number').on('input', function() {
-        let value = $(this).val().replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-        let formattedValue = value.match(/.{1,4}/g)?.join(' ');
-        $(this).val(formattedValue || value);
-    });
-
-    // Formatage de la date d'expiration
-    $('#expiry_date').on('input', function() {
-        let value = $(this).val().replace(/\D/g, '');
-        if (value.length >= 2) {
-            value = value.substring(0, 2) + '/' + value.substring(2, 4);
+    // Validation du formulaire de réservation
+    $('#reservationForm').on('submit', function(e) {
+        if (!validateReservationForm()) {
+            e.preventDefault();
         }
-        $(this).val(value);
-    });
-
-    // Validation du formulaire de paiement
-    $('#paymentForm').on('submit', function(e) {
-        e.preventDefault();
-        
-        if (validatePaymentForm()) {
-            processPayment();
-        }
+        // Si validation OK, le formulaire se soumet normalement vers paiement.php
     });
 
     // Mise à jour du récapitulatif
@@ -61,62 +45,58 @@ $(document).ready(function() {
         }
 
         $('#total-price').text(total + '€');
+        $('#final-total').text(total + '€');
     }
 
-    // Validation du formulaire de paiement
-    function validatePaymentForm() {
-        const cardNumber = $('#card_number').val().replace(/\s+/g, '');
-        const expiryDate = $('#expiry_date').val();
-        const cvv = $('#cvv').val();
-        const cardHolder = $('#card_holder').val();
-
-        // Validation numéro de carte (simplifiée)
-        if (cardNumber.length !== 16 || !/^\d+$/.test(cardNumber)) {
-            showNotification('Veuillez saisir un numéro de carte valide (16 chiffres)', 'error');
-            return false;
-        }
-
-        // Validation date d'expiration
-        if (!/^\d{2}\/\d{2}$/.test(expiryDate)) {
-            showNotification('Format de date d\'expiration invalide (MM/AA)', 'error');
-            return false;
-        }
-
-        // Validation CVV
-        if (cvv.length < 3 || cvv.length > 4 || !/^\d+$/.test(cvv)) {
-            showNotification('CVV invalide (3 ou 4 chiffres)', 'error');
-            return false;
-        }
-
-        // Validation nom du titulaire
-        if (cardHolder.trim().length < 2) {
-            showNotification('Veuillez saisir le nom du titulaire de la carte', 'error');
-            return false;
-        }
-
-        return true;
+    // Mise à jour des champs cachés pour le paiement
+    function updateHiddenFields() {
+        $('#hidden_baggage').val($('#extra_baggage').is(':checked') ? '1' : '0');
+        $('#hidden_insurance').val($('#travel_insurance').is(':checked') ? '1' : '0');
+        $('#hidden_seat').val($('#premium_seat').is(':checked') ? '1' : '0');
     }
 
-    // Traitement du paiement
-    function processPayment() {
-        const paymentBtn = $('.payment-btn');
-        const originalText = paymentBtn.html();
+    // Validation du formulaire de réservation
+    function validateReservationForm() {
+        let isValid = true;
+
+        // Validation des informations voyageurs
+        const passengerCount = parseInt('<?php echo $passengerCount; ?>');
         
-        // Simulation de traitement
-        paymentBtn.html('<i class="fas fa-spinner fa-spin"></i> Traitement en cours...');
-        paymentBtn.prop('disabled', true);
+        for (let i = 1; i <= passengerCount; i++) {
+            const civility = $(`#passenger_civility_${i}`).val();
+            const lastname = $(`#passenger_lastname_${i}`).val();
+            const firstname = $(`#passenger_firstname_${i}`).val();
+            const birthdate = $(`#passenger_birthdate_${i}`).val();
+            const email = $(`#passenger_email_${i}`).val();
+            const phone = $(`#passenger_phone_${i}`).val();
 
-        setTimeout(() => {
-            // Simulation de succès
-            showNotification('Paiement accepté ! Votre réservation est confirmée.', 'success');
-            
-            // Redirection vers la page de confirmation
-            setTimeout(() => {
-                const reservationNumber = 'JR' + Date.now() + Math.floor(Math.random() * 1000);
-                window.location.href = 'confirmation.php?reservation=' + reservationNumber;
-            }, 2000);
-            
-        }, 3000);
+            if (!civility || !lastname || !firstname || !birthdate || !email || !phone) {
+                isValid = false;
+                showNotification('Veuillez remplir tous les champs obligatoires pour chaque voyageur', 'error');
+                break;
+            }
+
+            // Validation email
+            if (email && !isValidEmail(email)) {
+                isValid = false;
+                showNotification(`Format d'email invalide pour le voyageur ${i}`, 'error');
+                break;
+            }
+        }
+
+        // Validation conditions générales
+        if (!$('#terms').is(':checked')) {
+            isValid = false;
+            showNotification('Vous devez accepter les conditions générales', 'error');
+        }
+
+        return isValid;
+    }
+
+    // Validation email
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
     }
 
     // Affichage des notifications
@@ -151,7 +131,7 @@ $(document).ready(function() {
         }, 5000);
     }
 
-    // Style pour les champs en erreur
+    // Style pour les notifications
     $('head').append(`
         <style>
             .error {
@@ -169,9 +149,28 @@ $(document).ready(function() {
                     opacity: 1;
                 }
             }
+            
+            .security-guarantee {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                padding: 15px;
+                background: var(--success-light);
+                border-radius: 6px;
+                color: var(--success-dark);
+                font-weight: 500;
+                margin-top: 20px;
+            }
+            
+            .btn-payment:disabled {
+                opacity: 0.7;
+                cursor: not-allowed;
+            }
         </style>
     `);
 
     // Initialisation
     updateSummary();
+    updateHiddenFields();
 });

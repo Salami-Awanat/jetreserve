@@ -465,4 +465,71 @@
     .step-text {
         font-size: 0.7rem;
     }
+    /* Styles pour la section de validation */
+.security-guarantee {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px;
+    background: var(--success-light);
+    border-radius: 6px;
+    color: var(--success-dark);
+    font-weight: 500;
+    margin-top: 20px;
+}
+
+.btn-payment {
+    width: 100%;
+    padding: 20px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 20px;
+}
+
+.btn-payment small {
+    font-size: 0.8rem;
+    font-weight: 400;
+    opacity: 0.9;
+}
+
+.terms-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: var(--background);
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+}
+
+.checkbox-group label {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.checkbox-group a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.checkbox-group a:hover {
+    text-decoration: underline;
+}
 }

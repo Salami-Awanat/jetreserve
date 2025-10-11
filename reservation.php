@@ -229,9 +229,9 @@
                 </div>
             </section>
 
-            <!-- Récapitulatif et paiement -->
+                        <!-- Récapitulatif et paiement -->
             <section class="reservation-section">
-                <h2><i class="fas fa-credit-card"></i> Récapitulatif et paiement</h2>
+                <h2><i class="fas fa-credit-card"></i> Récapitulatif et validation</h2>
                 
                 <div class="summary-payment">
                     <div class="summary-card">
@@ -261,37 +261,55 @@
                     </div>
 
                     <div class="payment-card">
-                        <h3>Informations de paiement</h3>
-                        <form id="paymentForm" class="payment-form">
-                            <div class="form-group">
-                                <label for="card_number">Numéro de carte *</label>
-                                <input type="text" id="card_number" name="card_number" placeholder="1234 5678 9012 3456" required maxlength="19">
-                            </div>
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label for="expiry_date">Date d'expiration *</label>
-                                    <input type="text" id="expiry_date" name="expiry_date" placeholder="MM/AA" required maxlength="5">
+                        <h3>Finaliser la réservation</h3>
+                        
+                        <!-- Formulaire pour passer au paiement -->
+                        <form id="reservationForm" method="GET" action="paiement.php">
+                            <!-- Champs cachés avec les données du vol -->
+                            <input type="hidden" name="airline" value="<?php echo htmlspecialchars($flightData['airline']); ?>">
+                            <input type="hidden" name="flight_number" value="<?php echo htmlspecialchars($flightData['flight_number']); ?>">
+                            <input type="hidden" name="from" value="<?php echo htmlspecialchars($flightData['from']); ?>">
+                            <input type="hidden" name="to" value="<?php echo htmlspecialchars($flightData['to']); ?>">
+                            <input type="hidden" name="departure_date" value="<?php echo htmlspecialchars($flightData['departure_date']); ?>">
+                            <input type="hidden" name="return_date" value="<?php echo htmlspecialchars($flightData['return_date']); ?>">
+                            <input type="hidden" name="passengers" value="<?php echo htmlspecialchars($flightData['passengers']); ?>">
+                            <input type="hidden" name="class" value="<?php echo htmlspecialchars($flightData['class']); ?>">
+                            <input type="hidden" name="base_price" value="<?php echo htmlspecialchars($flightData['price']); ?>">
+                            <input type="hidden" name="baggage" id="hidden_baggage" value="0">
+                            <input type="hidden" name="insurance" id="hidden_insurance" value="0">
+                            <input type="hidden" name="seat" id="hidden_seat" value="0">
+                            
+                            <div class="terms-section">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="terms" name="terms" required>
+                                    <label for="terms">
+                                        J'accepte les <a href="#" target="_blank">conditions générales de vente</a> 
+                                        et la <a href="#" target="_blank">politique de confidentialité</a> *
+                                    </label>
                                 </div>
-                                <div class="form-group">
-                                    <label for="cvv">CVV *</label>
-                                    <input type="text" id="cvv" name="cvv" placeholder="123" required maxlength="4">
+                                
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="newsletter" name="newsletter">
+                                    <label for="newsletter">
+                                        Je souhaite recevoir les offres promotionnelles de JetReserve
+                                    </label>
                                 </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="card_holder">Nom du titulaire *</label>
-                                <input type="text" id="card_holder" name="card_holder" required>
                             </div>
                             
                             <button type="submit" class="btn btn-primary btn-large payment-btn">
-                                <i class="fas fa-lock"></i> Payer et confirmer la réservation
+                                <i class="fas fa-arrow-right"></i>
+                                <span>Procéder au paiement</span>
+                                <small>Total: <span id="final-total"><?php echo htmlspecialchars($flightData['price'] * $passengerCount); ?>€</span></small>
                             </button>
                         </form>
+                        
+                        <div class="security-guarantee">
+                            <i class="fas fa-shield-check"></i>
+                            <span>Paiement 100% sécurisé - Données cryptées</span>
+                        </div>
                     </div>
                 </div>
             </section>
-        </div>
-    </main>
-
     <!-- Footer -->
     <footer>
         <div class="container">

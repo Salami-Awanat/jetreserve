@@ -1,0 +1,580 @@
+/* Styles spécifiques à la page de paiement */
+
+.payment-header {
+    text-align: center;
+    margin: 30px 0 40px;
+}
+
+.payment-header h1 {
+    color: var(--primary-dark);
+    font-size: 2.5rem;
+    margin-bottom: 30px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.payment-steps {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 30px;
+    position: relative;
+}
+
+.payment-steps::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: var(--border);
+    z-index: 1;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--border);
+    color: var(--secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    margin-bottom: 10px;
+    border: 3px solid white;
+    transition: all 0.3s ease;
+}
+
+.step.completed .step-number {
+    background: var(--success);
+    color: white;
+    border-color: var(--success);
+}
+
+.step.active .step-number {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.step-text {
+    font-size: 0.9rem;
+    color: var(--secondary);
+    font-weight: 500;
+}
+
+.step.active .step-text {
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+
+/* Grille de contenu */
+.payment-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Section Récapitulatif */
+.summary-section {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+}
+
+.summary-section h2 {
+    color: var(--primary-dark);
+    margin-bottom: 25px;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.flight-summary {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+    background: var(--background);
+}
+
+.summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.summary-header h3 {
+    margin: 0;
+    color: var(--primary-dark);
+    font-size: 1.2rem;
+}
+
+.flight-number {
+    color: var(--secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.route-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.city {
+    text-align: center;
+    flex: 1;
+}
+
+.city strong {
+    display: block;
+    color: var(--primary-dark);
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+}
+
+.city span {
+    color: var(--secondary);
+    font-size: 0.9rem;
+}
+
+.duration {
+    flex: 2;
+    text-align: center;
+    position: relative;
+}
+
+.line {
+    height: 2px;
+    background: var(--primary);
+    margin: 10px 20px;
+    position: relative;
+}
+
+.line::before {
+    content: '✈';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 5px;
+    color: var(--primary);
+}
+
+.duration span {
+    color: var(--secondary);
+    font-size: 0.9rem;
+}
+
+.flight-details {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-item span {
+    color: var(--secondary);
+    font-size: 0.9rem;
+}
+
+.detail-item strong {
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+
+/* Détail des prix */
+.price-breakdown {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+    background: var(--background);
+}
+
+.price-breakdown h4 {
+    color: var(--primary-dark);
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+}
+
+.price-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.price-item:last-child {
+    border-bottom: none;
+}
+
+.price-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0 0 0;
+    margin-top: 15px;
+    border-top: 2px solid var(--primary);
+    font-size: 1.2rem;
+}
+
+.price-total strong {
+    color: var(--primary-dark);
+}
+
+/* Badges de sécurité */
+.security-badges {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.security-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--success-light);
+    border-radius: 6px;
+    color: var(--success-dark);
+}
+
+.security-item i {
+    font-size: 1.2rem;
+}
+
+/* Section Paiement */
+.payment-section {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+}
+
+.payment-section h2 {
+    color: var(--primary-dark);
+    margin-bottom: 25px;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Méthodes de paiement */
+.payment-methods {
+    margin-bottom: 30px;
+}
+
+.payment-methods h4 {
+    color: var(--primary-dark);
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+}
+
+.methods-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.method-card {
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.method-card:hover {
+    border-color: var(--primary-light);
+}
+
+.method-card.active {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+.method-card i {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.method-card span {
+    font-weight: 500;
+    color: var(--primary-dark);
+}
+
+/* Formulaires de paiement */
+.payment-method-form {
+    display: none;
+    margin-bottom: 30px;
+}
+
+.payment-method-form.active {
+    display: block;
+}
+
+.payment-form .form-group {
+    margin-bottom: 20px;
+}
+
+.payment-form label {
+    display: block;
+    color: var(--primary-dark);
+    font-weight: 500;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.payment-form input,
+.payment-form select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.payment-form input:focus,
+.payment-form select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon i {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--secondary);
+}
+
+.input-with-icon i.fa-question-circle {
+    cursor: help;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+/* Sections spéciales */
+.billing-section,
+.terms-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: var(--background);
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+}
+
+.billing-section h4,
+.terms-section h4 {
+    color: var(--primary-dark);
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+}
+
+.checkbox-group label {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.checkbox-group a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.checkbox-group a:hover {
+    text-decoration: underline;
+}
+
+/* Bouton de paiement */
+.btn-payment {
+    width: 100%;
+    padding: 20px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 20px;
+}
+
+.btn-payment small {
+    font-size: 0.8rem;
+    font-weight: 400;
+    opacity: 0.9;
+}
+
+.btn-paypal,
+.btn-applepay {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-paypal {
+    background: #0070ba;
+    color: white;
+}
+
+.btn-paypal:hover {
+    background: #005ea6;
+}
+
+.btn-applepay {
+    background: #000;
+    color: white;
+}
+
+.btn-applepay:hover {
+    background: #333;
+}
+
+.payment-guarantee {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px;
+    background: var(--success-light);
+    border-radius: 6px;
+    color: var(--success-dark);
+    font-weight: 500;
+}
+
+/* Icônes de paiement dans le footer */
+.payment-icons {
+    display: flex;
+    gap: 15px;
+    font-size: 1.5rem;
+    color: var(--secondary);
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+    .payment-grid {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+    
+    .summary-section {
+        position: static;
+    }
+}
+
+@media (max-width: 768px) {
+    .payment-steps {
+        gap: 20px;
+    }
+    
+    .methods-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .route-info {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .duration {
+        order: -1;
+    }
+    
+    .line {
+        width: 100px;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .payment-header h1 {
+        font-size: 2rem;
+    }
+    
+    .payment-section,
+    .summary-section {
+        padding: 20px;
+    }
+    
+    .step-text {
+        font-size: 0.8rem;
+    }
+}
