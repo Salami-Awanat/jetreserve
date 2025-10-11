@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3306
--- Généré le : sam. 11 oct. 2025 à 03:06
+-- Généré le : sam. 11 oct. 2025 à 17:05
 -- Version du serveur : 5.7.40
 -- Version de PHP : 8.0.26
 
@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `date_creation` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_user`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
 
 --
 -- Déchargement des données de la table `users`
@@ -152,7 +152,10 @@ CREATE TABLE IF NOT EXISTS `users` (
 INSERT INTO `users` (`id_user`, `nom`, `prenom`, `email`, `telephone`, `password`, `role`, `statut`, `date_creation`) VALUES
 (1, 'Salami', 'Awanat', 'awanatsalami.afo@gmail.com', '0700000001', 'password2005', 'client', 'actif', '2025-10-07 22:26:46'),
 (2, 'Folashade', 'Arike', 'arike@gmail.com', '0700000002', 'password123', 'client', 'actif', '2025-10-07 22:26:46'),
-(3, 'Radji', 'Sad', 'admin@test.com', '0700000000', 'adminpass2003', 'admin', 'actif', '2025-10-07 22:26:46');
+(3, 'Radji', 'Sad', 'admin@test.com', '0700000000', 'adminpass2003', 'admin', 'actif', '2025-10-07 22:26:46'),
+(4, 'Agbalessi', 'Ruth', 'agbalessifloriane69@gmail.com', '0100000202', '1234567', 'admin', 'actif', '2025-10-11 04:45:37'),
+(5, 'Degny', 'Alfred', 'alfred@gmail.com', '0102030407', '1234567', 'client', 'actif', '2025-10-11 05:12:38'),
+(6, 'Kouamé', 'Mélina', 'mel@gmail.com', NULL, '1234567', 'client', 'actif', '2025-10-11 05:22:34');
 
 -- --------------------------------------------------------
 
