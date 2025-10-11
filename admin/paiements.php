@@ -116,37 +116,36 @@ if (isset($_POST['update_status'])) {
         </div>
     </header>
 
+    <!-- Bannière avec carousel -->
     <div class="main-banner-container">
-    <div id="mainCarousel" class="carousel slide" data-ride="carousel" data-interval="5000">
-        <div class="carousel-inner">
-            <div class="carousel-item active banner-1">
+        <div class="main-banner owl-carousel owl-theme">
+            <div class="item banner-1">
                 <div class="header-text">
                     <h2>Bienvenue chez JetReserve</h2>
                 </div>
             </div>
-            <div class="carousel-item banner-2">
+            <div class="item banner-2">
                 <div class="header-text">
                     <h2>Accédez à vos réservations</h2>
                 </div>
             </div>
-            <div class="carousel-item banner-3">
+            <div class="item banner-3">
                 <div class="header-text">
                     <h2>Gérez vos voyages</h2>
                 </div>
             </div>
-            <div class="carousel-item banner-4">
+            <div class="item banner-4">
                 <div class="header-text">
                     <h2>Voyagez en toute sérénité</h2>
                 </div>
             </div>
-            <div class="carousel-item banner-5">
+            <div class="item banner-5">
                 <div class="header-text">
                     <h2>Retrouvez vos avantages</h2>
                 </div>
             </div>
         </div>
-    </div>
-</div> 
+    </div> 
 
     <div class="container-fluid">
         <div class="row">
