@@ -6,20 +6,23 @@ if (isset($_POST['inscrire'])) {
     $nom = trim($_POST['nom']);
     $prenom = trim($_POST['prenom']);
     $email = trim($_POST['email']);
-    $mdp = password_hash($_POST['motdepasse'], PASSWORD_DEFAULT);
+    $mdp = $_POST['password']; // champ HTML
 
+    // Vérifie si l'email existe déjà
     $verif = $bdd->prepare("SELECT * FROM users WHERE email = ?");
     $verif->execute([$email]);
 
     if ($verif->rowCount() > 0) {
         $message = "⚠️ Cet email est déjà utilisé.";
     } else {
-        $insert = $bdd->prepare("INSERT INTO users (nom, prenom, email, motdepasse) VALUES (?, ?, ?, ?)");
+        // ⚠️ changer "mdp" en "password"
+        $insert = $bdd->prepare("INSERT INTO users (nom, prenom, email, password, statut) VALUES (?, ?, ?, ?, 'actif')");
         $insert->execute([$nom, $prenom, $email, $mdp]);
         $message = "✅ Inscription réussie ! Vous pouvez maintenant vous connecter.";
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -105,7 +108,7 @@ if (isset($_POST['inscrire'])) {
             <input type="email" name="email" placeholder="Votre adresse email" required>
 
             <label>Mot de passe :</label>
-            <input type="password" name="motdepasse" placeholder="Choisissez un mot de passe" required>
+            <input type="password" name="password" placeholder="Choisissez un mot de passe" required>
 
             <button type="submit" name="inscrire">Créer un compte</button>
         </form>
