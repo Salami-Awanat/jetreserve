@@ -230,7 +230,6 @@ $nouveaux_clients = $stmt->fetch(PDO::FETCH_ASSOC)['nouveaux_clients'] ?? 0;
                     <table class="table table-striped table-sm">
                         <thead>
                             <tr>
-                                <th>ID</th>
                                 <th>Client</th>
                                 <th>Vol</th>
                                 <th>Date</th>
@@ -262,7 +261,6 @@ $nouveaux_clients = $stmt->fetch(PDO::FETCH_ASSOC)['nouveaux_clients'] ?? 0;
                                 };
                 
                                 echo '<tr>';
-                                echo '<td>' . $reservation['id_reservation'] . '</td>';
                                 echo '<td>' . htmlspecialchars($reservation['prenom'] . ' ' . $reservation['nom']) . '</td>';
                                 echo '<td>' . htmlspecialchars($reservation['depart'] . ' → ' . $reservation['arrivee']) . '</td>';
                                 echo '<td>' . date('d/m/Y', strtotime($reservation['date_reservation'])) . '</td>';
