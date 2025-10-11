@@ -63,7 +63,7 @@ if (isset($_POST['inscrire'])) {
         <div class="main-banner owl-carousel owl-theme">
             <div class="item banner-1">
                 <div class="header-text">
-                    <h2>Connectez-vous à votre compte</h2>
+                    <h2>Inscrivez-vous des maintenant</h2>
                 </div>
             </div>
             <div class="item banner-2">
