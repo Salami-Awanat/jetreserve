@@ -284,7 +284,7 @@ header {
 /* Sidebar - MÊME COULEUR QUE LE FOOTER */
 #sidebar {
     background: var(--sidebar-footer-bg) !important;
-    min-height: calc(100vh - 160px);
+    height: 600px;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
     position: sticky;
@@ -329,10 +329,6 @@ header {
 #sidebar .nav-link i {
     width: 20px;
     text-align: center;
-}
-
-#sidebar .nav-link.text-danger:hover {
-    background: rgb(23, 17, 46);
 }
 
 /* Main Content */
@@ -678,5 +674,3 @@ footer {
     padding-right: 15px;
     padding-left: 15px;
 }
-
-
