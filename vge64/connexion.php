@@ -6,13 +6,13 @@ $message = "";
 
 if (isset($_POST['connecter'])) {
     $email = trim($_POST['email']);
-    $mdp = $_POST['motdepasse'];
+    $mdp = $_POST['password'];
 
     $query = $bdd->prepare("SELECT * FROM users WHERE email = ?");
     $query->execute([$email]);
     $user = $query->fetch();
 
-    if ($user && password_verify($mdp, $user['motdepasse'])) {
+    if ($user && password_verify($mdp, $user['password'])) {
         $_SESSION['id_user'] = $user['id'];
         $_SESSION['prenom'] = $user['prenom'];
         $_SESSION['nom'] = $user['nom'];
