@@ -674,3 +674,29 @@ footer {
     padding-right: 15px;
     padding-left: 15px;
 }
+
+/* Fix pour les modals UNIQUEMENT */
+.modal:not(.show) {
+    display: none !important;
+}
+
+.modal.show {
+    display: block !important;
+    opacity: 1 !important;
+}
+
+.modal-backdrop:not(.show) {
+    display: none !important;
+}
+
+.modal-backdrop.show {
+    display: block !important;
+    opacity: 0.5 !important;
+}
+
+/* S'assurer que le carousel n'est PAS affecté */
+.main-banner .item,
+.owl-carousel .owl-item,
+.owl-carousel .item {
+    display: block !important;
+}
