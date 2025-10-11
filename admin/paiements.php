@@ -73,95 +73,8 @@ if (isset($_POST['update_status'])) {
     <title>Suivi des Paiements - Administration</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
-    <!-- CSS OwlCarousel IMPORTANT -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
     <link rel="stylesheet" href="style2.css">
-    <style>
-        /* Fix pour les modals */
-.modal {
-    display: none !important;
-}
-
-.modal.show {
-    display: block !important;
-}
-
-.modal-backdrop {
-    display: none !important;
-}
-
-.modal.show ~ .modal-backdrop {
-    display: block !important;
-}
-
-/* Fix pour le carousel */
-.main-banner .item {
-    display: none;
-}
-
-.main-banner .item:first-child {
-    display: block;
-}
-/* FORCER l'affichage correct des modals */
-.modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 9999;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    outline: 0;
-    background-color: rgba(0,0,0,0.5);
-}
-
-.modal.show {
-    display: block !important;
-    opacity: 1;
-}
-
-.modal-dialog {
-    position: relative;
-    width: auto;
-    margin: 1.75rem auto;
-    pointer-events: none;
-    max-width: 500px;
-}
-
-.modal.show .modal-dialog {
-    transform: none;
-    pointer-events: auto;
-}
-
-.modal-content {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    pointer-events: auto;
-    background-color: #fff;
-    background-clip: padding-box;
-    border: 1px solid rgba(0,0,0,.2);
-    border-radius: .3rem;
-    outline: 0;
-}
-
-/* Masquer le carousel pendant le debug */
-.main-banner-container {
-    height: 300px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.main-banner .header-text h2 {
-    color: white;
-    text-align: center;
-}
-    </style>
+    
 </head>
 <body>
     <!-- Header -->
@@ -551,35 +464,6 @@ if (isset($_POST['update_status'])) {
             </div>
         </div>
     </footer>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
-<script>
-$(document).ready(function(){
-    // Désactiver COMPLÈTEMENT le carousel pour tester
-    $('.main-banner .item').first().show();
-    
-    // Empêcher les événements en double sur les modals
-    $('.modal').off('show.bs.modal hidden.bs.modal');
-    
-    // Empêcher la propagation des clics sur les boutons
-    $('button[data-toggle="modal"]').off('click').on('click', function(e){
-        e.preventDefault();
-        e.stopPropagation();
-        var target = $(this).attr('data-target');
-        $(target).modal('show');
-        return false;
-    });
-    
-    // Fermer proprement les modals
-    $('.modal .close, .modal button[data-dismiss="modal"]').off('click').on('click', function(e){
-        e.preventDefault();
-        e.stopPropagation();
-        $(this).closest('.modal').modal('hide');
-        return false;
-    });
-});
-</script>
 </body>
 </html>
