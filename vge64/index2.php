@@ -101,13 +101,13 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="reservations.php">
+                            <a class="nav-link" href="../reservation.php">
                                 <i class="fas fa-plane-departure me-2"></i>
                                 Mes réservations
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="paiements.php">
+                            <a class="nav-link" href="../paiement.php">
                                 <i class="fas fa-credit-card me-2"></i>
                                 Mes paiements
                             </a>
