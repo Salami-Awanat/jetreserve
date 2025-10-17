@@ -1,6 +1,6 @@
 <?php
 session_start();
-include('../includes/connexion.php');
+include('../includes/db.php');
 
 $message = "";
 
@@ -9,7 +9,7 @@ if (isset($_POST['connecter'])) {
     $mdp = $_POST['password'] ?? '';
 
     // Requête SQL : utilisateur avec email et mot de passe (en clair)
-    $query = $bdd->prepare("SELECT * FROM users WHERE email = ? AND password = ?");
+    $query = $pdo->prepare("SELECT * FROM users WHERE email = ? AND password = ?");
     $query->execute([$email, $mdp]);
     $user = $query->fetch(PDO::FETCH_ASSOC);
 

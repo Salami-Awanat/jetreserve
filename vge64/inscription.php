@@ -1,5 +1,5 @@
 <?php
-include('../includes/connexion.php');
+include('../includes/db.php');
 $message = "";
 
 if (isset($_POST['inscrire'])) {

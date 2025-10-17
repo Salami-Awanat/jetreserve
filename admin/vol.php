@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once '../includes/connexion.php';
+require_once '../includes/db.php';
 
 // Traitement des actions CRUD
 if (isset($_POST['action'])) {
