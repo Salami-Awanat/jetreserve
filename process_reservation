@@ -1,0 +1,88 @@
+<?php
+session_start();
+require_once 'includes/db.php';
+
+if (!isset($_SESSION['user_id'])) {
+    header('Location: vge64/connexion.php');
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: index.php');
+    exit;
+}
+
+try {
+    // Récupérer les données du formulaire
+    $vol_id = intval($_POST['vol_id']);
+    $user_id = $_SESSION['user_id'];
+    $passagers = intval($_POST['passagers']);
+    $classe = $_POST['classe'];
+    $total_price = floatval($_POST['total_price']);
+    
+    // Données personnelles
+    $civilite = $_POST['civilite'];
+    $prenom = $_POST['prenom'];
+    $nom = $_POST['nom'];
+    $email = $_POST['email'];
+    $phone = $_POST['phone'];
+    
+    // Vérifier que le vol existe et a des places disponibles
+    $sql = "SELECT * FROM vols WHERE id_vol = ? AND places_disponibles >= ? AND date_depart > NOW()";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$vol_id, $passagers]);
+    $vol = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$vol) {
+        header('Location: reservation.php?vol_id=' . $vol_id . '&error=plus_de_places');
+        exit;
+    }
+    
+    // Commencer une transaction
+    $pdo->beginTransaction();
+    
+    // Créer la réservation
+    $sql = "INSERT INTO reservations (id_utilisateur, id_vol, nombre_passagers, classe, prix_total, civilite, prenom, nom, email, telephone, statut, date_reservation) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmée', NOW())";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$user_id, $vol_id, $passagers, $classe, $total_price, $civilite, $prenom, $nom, $email, $phone]);
+    $reservation_id = $pdo->lastInsertId();
+    
+    // Ajouter les passagers
+    if (isset($_POST['passengers'])) {
+        foreach ($_POST['passengers'] as $passenger) {
+            $sql = "INSERT INTO passagers (id_reservation, civilite, prenom, nom, date_naissance) 
+                    VALUES (?, ?, ?, ?, ?)";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                $reservation_id,
+                $passenger['civilite'],
+                $passenger['prenom'],
+                $passenger['nom'],
+                $passenger['naissance']
+            ]);
+        }
+    }
+    
+    // Mettre à jour les places disponibles
+    $sql = "UPDATE vols SET places_disponibles = places_disponibles - ? WHERE id_vol = ?";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$passagers, $vol_id]);
+    
+    // Valider la transaction
+    $pdo->commit();
+    
+    // Rediriger vers la page de confirmation
+    header('Location: confirmation.php?reservation_id=' . $reservation_id);
+    exit;
+    
+} catch (Exception $e) {
+    // Annuler la transaction en cas d'erreur
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    error_log("Erreur réservation: " . $e->getMessage());
+    header('Location: reservation.php?vol_id=' . $vol_id . '&error=erreur_reservation');
+    exit;
+}
+?>

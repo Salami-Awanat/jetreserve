@@ -6,44 +6,46 @@ session_start();
 $vol_id = isset($_GET['vol_id']) ? intval($_GET['vol_id']) : 0;
 
 if (!$vol_id) {
-    header('Location: vols.php');
+    header('Location: index.php');
     exit;
 }
 
 // Récupérer les informations du vol
-$stmt = $pdo->prepare("SELECT v.*, c.nom_compagnie, c.code_compagnie, a.modele as avion_modele
+$stmt = $pdo->prepare("SELECT v.*, c.nom_compagnie, a.modele as avion_modele, a.capacite, a.id_avion
                       FROM vols v 
                       JOIN compagnies c ON v.id_compagnie = c.id_compagnie 
-                      JOIN avions a ON v.id_avion = a.id_avion
+                      JOIN avions a ON v.id_avion = a.id_avion 
                       WHERE v.id_vol = ?");
 $stmt->execute([$vol_id]);
 $vol = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$vol) {
-    header('Location: vols.php');
+    header('Location: index.php');
     exit;
 }
 
-// Vérifier si l'utilisateur est connecté
-if (!isset($_SESSION['user_id'])) {
-    header('Location: connexion.php?redirect=seat_selection.php?vol_id=' . $vol_id);
-    exit;
-}
-
-$user_id = $_SESSION['user_id'];
+// Récupérer les paramètres de réservation
+$passagers = isset($_GET['passagers']) ? intval($_GET['passagers']) : 1;
+$classe = $_GET['classe'] ?? 'économique';
 
 // Récupérer tous les sièges de l'avion
-$stmt = $pdo->prepare("SELECT * FROM sieges_avion WHERE id_avion = ? ORDER BY rang, position");
+$stmt = $pdo->prepare("SELECT * FROM sieges_avion WHERE id_avion = ? ORDER BY rangee, colonne");
 $stmt->execute([$vol['id_avion']]);
 $sieges = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Récupérer les sièges déjà réservés pour ce vol
-$stmt = $pdo->prepare("SELECT rs.id_siege 
+$stmt = $pdo->prepare("SELECT rs.siege_id 
                       FROM reservation_sieges rs 
-                      JOIN reservations r ON rs.id_reservation = r.id_reservation 
-                      WHERE r.id_vol = ? AND r.statut IN ('confirmé', 'en attente')");
+                      JOIN reservations r ON rs.reservation_id = r.id 
+                      WHERE r.id_vol = ? AND r.statut IN ('confirmée', 'en_attente')");
 $stmt->execute([$vol_id]);
 $sieges_reserves = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+// Organiser les sièges par rangée
+$sieges_par_rangee = [];
+foreach ($sieges as $siege) {
+    $sieges_par_rangee[$siege['rangee']][] = $siege;
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -72,14 +74,16 @@ $sieges_reserves = $stmt->fetchAll(PDO::FETCH_COLUMN);
             padding: 0 20px;
         }
 
-        .header-top {
+        header {
             background: white;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             padding: 1rem 0;
-            margin-bottom: 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .header-content {
+        .header-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -96,165 +100,153 @@ $sieges_reserves = $stmt->fetchAll(PDO::FETCH_COLUMN);
             color: #2563eb;
         }
 
-        .flight-info {
-            text-align: center;
-            flex: 1;
-        }
-
-        .flight-info h1 {
-            font-size: 1.5rem;
-            color: #1e293b;
-            margin-bottom: 0.5rem;
-        }
-
-        .flight-details {
-            color: #64748b;
-            font-size: 0.9rem;
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
         }
 
         .btn-primary {
             background: #2563eb;
             color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
         }
 
         .btn-primary:hover {
             background: #1d4ed8;
         }
 
-        .cabin-section {
+        .flight-info {
             background: white;
             border-radius: 12px;
-            padding: 30px;
+            padding: 25px;
+            margin: 20px 0;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            margin-bottom: 2rem;
+        }
+
+        .seat-map-container {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .cabin-section {
+            margin-bottom: 30px;
         }
 
         .cabin-title {
             text-align: center;
-            margin-bottom: 2rem;
-            color: #1e293b;
-        }
-
-        .fuselage {
-            position: relative;
-            width: 800px;
-            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
-            border-radius: 20px;
-            padding: 40px 20px;
-            margin: 0 auto;
-        }
-
-        .cockpit {
-            position: absolute;
-            top: -30px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 60px;
-            background: #374151;
-            border-radius: 50% 50% 0 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 12px;
-        }
-
-        .seats-container {
-            display: grid;
-            grid-template-columns: 1fr 60px 1fr;
-            gap: 20px;
-            margin-top: 30px;
-        }
-
-        .aisle {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #64748b;
-            font-size: 12px;
-            writing-mode: vertical-lr;
-            text-orientation: mixed;
+            color: #2563eb;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
         }
 
         .seat-row {
             display: flex;
-            flex-direction: column;
-            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 5px;
         }
 
         .row-number {
+            width: 30px;
             text-align: center;
-            font-weight: bold;
-            color: #374151;
-            margin-bottom: 5px;
+            font-weight: 600;
+            color: #64748b;
         }
 
-        .seats-group {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-        }
-
-        .seat-item {
+        .seat {
             position: relative;
+            width: 40px;
+            height: 40px;
+            margin: 2px;
         }
 
-        .seat-checkbox {
+        .seat input[type="checkbox"] {
             display: none;
         }
 
-        .seat-label {
-            width: 40px;
-            height: 40px;
-            background: #22c55e;
-            border-radius: 8px 8px 4px 4px;
+        .seat label {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            color: white;
             font-size: 10px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            position: relative;
+            font-weight: 600;
+            color: white;
         }
 
-        .seat-label:hover {
+        .seat.available label {
+            background: #10b981;
+            border-color: #059669;
+        }
+
+        .seat.selected label {
+            background: #2563eb;
+            border-color: #1d4ed8;
             transform: scale(1.1);
         }
 
-        .seat-checkbox:checked + .seat-label {
+        .seat.reserved label {
             background: #ef4444;
-        }
-
-        .seat-checkbox:disabled + .seat-label {
-            background: #94a3b8;
+            border-color: #dc2626;
             cursor: not-allowed;
-            transform: none;
         }
 
-        .seat-number {
-            position: absolute;
-            bottom: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 10px;
+        .seat.premium label {
+            background: #f59e0b;
+            border-color: #d97706;
+        }
+
+        .seat.business label {
+            background: #8b5cf6;
+            border-color: #7c3aed;
+        }
+
+        .seat.emergency-exit label {
+            background: #f97316;
+            border-color: #ea580c;
+        }
+
+        .seat input[type="checkbox"]:disabled + label {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .seat.available input[type="checkbox"]:checked + label {
+            background: #2563eb;
+            border-color: #1d4ed8;
+        }
+
+        .aisle {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
             color: #64748b;
+            font-size: 12px;
         }
 
         .seat-legend {
             display: flex;
             justify-content: center;
-            gap: 30px;
-            margin: 2rem 0;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
         }
 
         .legend-item {
@@ -263,245 +255,339 @@ $sieges_reserves = $stmt->fetchAll(PDO::FETCH_COLUMN);
             gap: 8px;
         }
 
-        .legend-seat {
+        .legend-color {
             width: 20px;
             height: 20px;
             border-radius: 4px;
+            border: 2px solid;
         }
 
-        .available-seat {
-            background: #22c55e;
-        }
+        .legend-available { background: #10b981; border-color: #059669; }
+        .legend-selected { background: #2563eb; border-color: #1d4ed8; }
+        .legend-reserved { background: #ef4444; border-color: #dc2626; }
+        .legend-premium { background: #f59e0b; border-color: #d97706; }
+        .legend-business { background: #8b5cf6; border-color: #7c3aed; }
 
-        .selected-seat {
-            background: #ef4444;
-        }
-
-        .reserved-seat {
-            background: #94a3b8;
-        }
-
-        .selected-seats-section {
+        .selection-summary {
             background: white;
             border-radius: 12px;
-            padding: 20px;
+            padding: 25px;
+            margin: 20px 0;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            margin-top: 2rem;
+            position: sticky;
+            bottom: 20px;
+            border: 2px solid #2563eb;
         }
 
         .selected-seats-list {
             display: flex;
-            gap: 10px;
             flex-wrap: wrap;
-            margin: 1rem 0;
+            gap: 10px;
+            margin: 15px 0;
         }
 
-        .selected-seat-badge {
+        .seat-badge {
             background: #2563eb;
             color: white;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
-        .price-summary {
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn-outline {
+            border: 2px solid #2563eb;
+            color: #2563eb;
+            background: transparent;
+        }
+
+        .btn-outline:hover {
+            background: #2563eb;
+            color: white;
+        }
+
+        .cabin-layout {
+            position: relative;
+            margin: 30px 0;
+        }
+
+        .cabin-divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #64748b, transparent);
+            margin: 20px 0;
+        }
+
+        .wing-indicator {
             text-align: center;
-            margin-top: 1rem;
+            color: #64748b;
+            font-style: italic;
+            margin: 10px 0;
         }
 
-        .total-price {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #1e293b;
+        .seat-info {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #64748b;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .seat {
+                width: 35px;
+                height: 35px;
+            }
+            
+            .aisle {
+                width: 35px;
+                height: 35px;
+            }
+            
+            .row-number {
+                width: 25px;
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header-top">
+    <header>
         <div class="container">
-            <div class="header-content">
+            <div class="header-top">
                 <a href="index.php" class="logo">Jet<span>Reserve</span></a>
-                
-                <div class="flight-info">
-                    <h1><?php echo htmlspecialchars($vol['depart']); ?> → <?php echo htmlspecialchars($vol['arrivee']); ?></h1>
-                    <div class="flight-details">
-                        <?php echo htmlspecialchars($vol['nom_compagnie']); ?> • 
-                        Vol <?php echo htmlspecialchars($vol['code_compagnie'] . $vol['numero_vol']); ?> • 
-                        <?php echo date('d M Y, H:i', strtotime($vol['date_depart'])); ?> • 
-                        Classe: <?php echo htmlspecialchars($vol['classe']); ?>
-                    </div>
+                <div class="auth-buttons">
+                    <?php if (isset($_SESSION['user_id'])): ?>
+                        <span>Bonjour, <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Utilisateur'); ?></span>
+                    <?php else: ?>
+                        <a href="vge64/connexion.php" class="btn btn-outline">Connexion</a>
+                        <a href="vge64/inscription.php" class="btn btn-primary">Inscription</a>
+                    <?php endif; ?>
                 </div>
-
-                <a href="vols.php" class="btn-primary">
-                    <i class="fas fa-arrow-left"></i> Retour
-                </a>
             </div>
         </div>
-    </div>
+    </header>
 
     <div class="container">
-        <!-- Légende des sièges -->
-        <div class="seat-legend">
-            <div class="legend-item">
-                <div class="legend-seat available-seat"></div>
-                <span>Disponible</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-seat selected-seat"></div>
-                <span>Sélectionné</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-seat reserved-seat"></div>
-                <span>Réservé</span>
+        <!-- Informations du vol -->
+        <div class="flight-info">
+            <h2>Sélection des sièges</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 15px;">
+                <div>
+                    <strong><?php echo htmlspecialchars($vol['nom_compagnie']); ?></strong>
+                    <div style="color: #64748b;">Vol <?php echo htmlspecialchars($vol['numero_vol']); ?></div>
+                </div>
+                <div>
+                    <strong><?php echo htmlspecialchars($vol['depart']); ?> → <?php echo htmlspecialchars($vol['arrivee']); ?></strong>
+                    <div style="color: #64748b;">
+                        <?php echo date('d/m/Y H:i', strtotime($vol['date_depart'])); ?>
+                    </div>
+                </div>
+                <div>
+                    <strong>Classe: <?php echo htmlspecialchars($classe); ?></strong>
+                    <div style="color: #64748b;">Passagers: <?php echo $passagers; ?></div>
+                </div>
+                <div>
+                    <strong>Avion: <?php echo htmlspecialchars($vol['avion_modele']); ?></strong>
+                    <div style="color: #64748b;">Capacité: <?php echo $vol['capacite']; ?> sièges</div>
+                </div>
             </div>
         </div>
 
-        <!-- Cabine de l'avion -->
-        <div class="cabin-section">
-            <h2 class="cabin-title">Cabine <?php echo ucfirst($vol['classe']); ?> - Sélectionnez vos sièges</h2>
+        <!-- Carte des sièges -->
+        <div class="seat-map-container">
+            <h3>Carte des sièges de l'avion</h3>
             
-            <div class="fuselage">
-                <div class="cockpit">
-                    COCKPIT
+            <!-- Légende -->
+            <div class="seat-legend">
+                <div class="legend-item">
+                    <div class="legend-color legend-available"></div>
+                    <span>Disponible</span>
                 </div>
-                
-                <div class="seats-container">
-                    <!-- Côté gauche -->
-                    <div class="seat-row left-side">
+                <div class="legend-item">
+                    <div class="legend-color legend-selected"></div>
+                    <span>Sélectionné</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-reserved"></div>
+                    <span>Réservé</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-premium"></div>
+                    <span>Premium</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-business"></div>
+                    <span>Affaires</span>
+                </div>
+            </div>
+
+            <div class="cabin-layout">
+                <!-- Cabine Affaires (premières rangées) -->
+                <?php if ($classe === 'affaires' || $classe === 'première'): ?>
+                <div class="cabin-section">
+                    <div class="cabin-title">Cabine Affaires</div>
+                    <?php
+                    $rangees_affaires = array_slice($sieges_par_rangee, 0, 6, true);
+                    foreach ($rangees_affaires as $rangee => $sieges_rangee): 
+                    ?>
+                    <div class="seat-row">
+                        <div class="row-number"><?php echo $rangee; ?></div>
                         <?php
-                        $sieges_gauche = array_filter($sieges, function($siege) {
-                            return $siege['cote'] === 'gauche';
-                        });
-                        
-                        $sieges_par_rang = [];
-                        foreach ($sieges_gauche as $siege) {
-                            $sieges_par_rang[$siege['rang']][] = $siege;
-                        }
-                        ksort($sieges_par_rang);
-                        
-                        foreach ($sieges_par_rang as $rang => $sieges_rang) {
-                            echo "<div class='row-number'>Rang {$rang}</div>";
-                            echo "<div class='seats-group'>";
-                            foreach ($sieges_rang as $siege) {
-                                $est_reserve = in_array($siege['id_siege'], $sieges_reserves);
-                                $disabled = $est_reserve ? 'disabled' : '';
-                                
-                                echo "<div class='seat-item'>";
-                                echo "<input type='checkbox' class='seat-checkbox' id='siege_{$siege['id_siege']}' 
-                                      name='sieges[]' value='{$siege['id_siege']}' {$disabled} 
-                                      data-rang='{$siege['rang']}' data-position='{$siege['position']}'>";
-                                echo "<label for='siege_{$siege['id_siege']}' class='seat-label'>";
-                                echo "{$siege['position']}";
-                                echo "</label>";
-                                echo "<div class='seat-number'>Siège {$siege['rang']}{$siege['position']}</div>";
-                                echo "</div>";
+                        // Configuration 2-2 pour la cabine affaires
+                        $colonnes_affaires = ['A', 'B', 'E', 'F'];
+                        foreach ($colonnes_affaires as $col_index => $colonne): 
+                            $siege_trouve = null;
+                            foreach ($sieges_rangee as $siege) {
+                                if ($siege['colonne'] === $colonne) {
+                                    $siege_trouve = $siege;
+                                    break;
+                                }
                             }
-                            echo "</div>";
-                        }
+                            
+                            if ($siege_trouve): 
+                                $est_reserve = in_array($siege_trouve['id_siege'], $sieges_reserves);
+                                $classe_siege = $est_reserve ? 'reserved' : 'available business';
+                        ?>
+                        <div class="seat <?php echo $classe_siege; ?>" data-siege-id="<?php echo $siege_trouve['id_siege']; ?>">
+                            <input type="checkbox" id="siege_<?php echo $siege_trouve['id_siege']; ?>" 
+                                   name="sieges[]" value="<?php echo $siege_trouve['id_siege']; ?>" 
+                                   <?php echo $est_reserve ? 'disabled' : ''; ?>>
+                            <label for="siege_<?php echo $siege_trouve['id_siege']; ?>">
+                                <?php echo $siege_trouve['colonne'] . $rangee; ?>
+                            </label>
+                        </div>
+                        <?php 
+                            endif;
+                            
+                            // Ajouter l'allée après les 2 premiers sièges
+                            if ($col_index === 1): 
+                        ?>
+                        <div class="aisle">AISLE</div>
+                        <?php 
+                            endif;
+                        endforeach; 
                         ?>
                     </div>
+                    <?php endforeach; ?>
+                </div>
+                <div class="cabin-divider"></div>
+                <?php endif; ?>
 
-                    <!-- Allée -->
-                    <div class="aisle">
-                        ALLÉE
-                    </div>
-
-                    <!-- Côté droit -->
-                    <div class="seat-row right-side">
+                <!-- Cabine Économique -->
+                <div class="cabin-section">
+                    <div class="cabin-title">Cabine Économique</div>
+                    <?php
+                    $rangees_economique = ($classe === 'affaires' || $classe === 'première') ? 
+                                         array_slice($sieges_par_rangee, 6, null, true) : 
+                                         $sieges_par_rangee;
+                    
+                    foreach ($rangees_economique as $rangee => $sieges_rangee): 
+                    ?>
+                    <div class="seat-row">
+                        <div class="row-number"><?php echo $rangee; ?></div>
                         <?php
-                        $sieges_droit = array_filter($sieges, function($siege) {
-                            return $siege['cote'] === 'droit';
-                        });
-                        
-                        $sieges_par_rang = [];
-                        foreach ($sieges_droit as $siege) {
-                            $sieges_par_rang[$siege['rang']][] = $siege;
-                        }
-                        ksort($sieges_par_rang);
-                        
-                        foreach ($sieges_par_rang as $rang => $sieges_rang) {
-                            echo "<div class='row-number'>Rang {$rang}</div>";
-                            echo "<div class='seats-group'>";
-                            foreach ($sieges_rang as $siege) {
-                                $est_reserve = in_array($siege['id_siege'], $sieges_reserves);
-                                $disabled = $est_reserve ? 'disabled' : '';
-                                
-                                echo "<div class='seat-item'>";
-                                echo "<input type='checkbox' class='seat-checkbox' id='siege_{$siege['id_siege']}' 
-                                      name='sieges[]' value='{$siege['id_siege']}' {$disabled} 
-                                      data-rang='{$siege['rang']}' data-position='{$siege['position']}'>";
-                                echo "<label for='siege_{$siege['id_siege']}' class='seat-label'>";
-                                echo "{$siege['position']}";
-                                echo "</label>";
-                                echo "<div class='seat-number'>Siège {$siege['rang']}{$siege['position']}</div>";
-                                echo "</div>";
+                        // Configuration 3-3 pour la cabine économique
+                        $colonnes_economique = ['A', 'B', 'C', 'D', 'E', 'F'];
+                        foreach ($colonnes_economique as $col_index => $colonne): 
+                            $siege_trouve = null;
+                            foreach ($sieges_rangee as $siege) {
+                                if ($siege['colonne'] === $colonne) {
+                                    $siege_trouve = $siege;
+                                    break;
+                                }
                             }
-                            echo "</div>";
-                        }
+                            
+                            if ($siege_trouve): 
+                                $est_reserve = in_array($siege_trouve['id_siege'], $sieges_reserves);
+                                $classe_siege = $est_reserve ? 'reserved' : 'available';
+                                if ($siege_trouve['type'] === 'premium') $classe_siege .= ' premium';
+                        ?>
+                        <div class="seat <?php echo $classe_siege; ?>" data-siege-id="<?php echo $siege_trouve['id_siege']; ?>">
+                            <input type="checkbox" id="siege_<?php echo $siege_trouve['id_siege']; ?>" 
+                                   name="sieges[]" value="<?php echo $siege_trouve['id_siege']; ?>" 
+                                   <?php echo $est_reserve ? 'disabled' : ''; ?>>
+                            <label for="siege_<?php echo $siege_trouve['id_siege']; ?>">
+                                <?php echo $siege_trouve['colonne'] . $rangee; ?>
+                            </label>
+                        </div>
+                        <?php 
+                            endif;
+                            
+                            // Ajouter l'allée après les 3 premiers sièges
+                            if ($col_index === 2): 
+                        ?>
+                        <div class="aisle">AISLE</div>
+                        <?php 
+                            endif;
+                        endforeach; 
                         ?>
                     </div>
+                    <?php endforeach; ?>
                 </div>
+            </div>
+
+            <!-- Indicateur des ailes -->
+            <div class="wing-indicator">
+                <i class="fas fa-plane"></i> Zone des ailes (Rangées 10-20)
+            </div>
+            
+            <div class="seat-info">
+                Les sièges près des ailes offrent généralement plus de stabilité pendant le vol
             </div>
         </div>
 
-        <!-- Sièges sélectionnés et prix -->
-        <div class="selected-seats-section">
-            <h3>Vos sièges sélectionnés</h3>
+        <!-- Résumé de la sélection -->
+        <div class="selection-summary" id="selectionSummary" style="display: none;">
+            <h3>Sièges sélectionnés</h3>
             <div class="selected-seats-list" id="selectedSeatsList">
-                <div style="color: #64748b;">Aucun siège sélectionné</div>
+                <!-- Les sièges sélectionnés apparaîtront ici -->
             </div>
-            
-            <div class="price-summary">
-                <div>Prix par siège: <strong><?php echo $vol['prix']; ?>€</strong></div>
-                <div class="total-price" id="totalPrice">Total: 0€</div>
-                
-                <button class="btn-primary" style="margin-top: 1rem; padding: 15px 30px;" 
-                        onclick="processSeatSelection()" id="continueBtn" disabled>
-                    <i class="fas fa-credit-card"></i> Continuer vers le paiement
+            <div style="margin: 15px 0; padding: 10px; background: #f0f9ff; border-radius: 6px;">
+                <strong>Sièges sélectionnés :</strong> <span id="selectedCount">0</span> sur <?php echo $passagers; ?>
+            </div>
+            <div class="action-buttons">
+                <a href="reservation.php?vol_id=<?php echo $vol_id; ?>&passagers=<?php echo $passagers; ?>&classe=<?php echo $classe; ?>" class="btn btn-outline">
+                    <i class="fas fa-arrow-left"></i> Retour
+                </a>
+                <button onclick="processSeatSelection()" class="btn btn-primary">
+                    <i class="fas fa-credit-card"></i> Procéder au paiement
                 </button>
             </div>
         </div>
     </div>
 
     <script>
-        let prixParSiege = <?php echo $vol['prix']; ?>;
         let selectedSeats = [];
+        const maxSeats = <?php echo $passagers; ?>;
 
-        function updateSelection() {
-            const selectedSeatsList = document.getElementById('selectedSeatsList');
-            const totalPriceElement = document.getElementById('totalPrice');
-            const continueBtn = document.getElementById('continueBtn');
+        function updateSelectionSummary() {
+            const summary = document.getElementById('selectionSummary');
+            const seatsList = document.getElementById('selectedSeatsList');
+            const selectedCount = document.getElementById('selectedCount');
+            
+            seatsList.innerHTML = '';
+            selectedSeats.forEach(seat => {
+                const badge = document.createElement('div');
+                badge.className = 'seat-badge';
+                badge.innerHTML = `<i class="fas fa-chair"></i> ${seat}`;
+                seatsList.appendChild(badge);
+            });
+            
+            selectedCount.textContent = selectedSeats.length;
             
             if (selectedSeats.length > 0) {
-                selectedSeatsList.innerHTML = selectedSeats.map(seat => 
-                    `<div class="selected-seat-badge">Rang ${seat.rang}${seat.position}</div>`
-                ).join('');
-                
-                const total = selectedSeats.length * prixParSiege;
-                totalPriceElement.textContent = `Total: ${total}€`;
-                continueBtn.disabled = false;
+                summary.style.display = 'block';
             } else {
-                selectedSeatsList.innerHTML = '<div style="color: #64748b;">Aucun siège sélectionné</div>';
-                totalPriceElement.textContent = 'Total: 0€';
-                continueBtn.disabled = true;
+                summary.style.display = 'none';
             }
         }
-
-        document.querySelectorAll('.seat-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const siegeId = this.value;
-                const rang = this.dataset.rang;
-                const position = this.dataset.position;
-                
-                if (this.checked) {
-                    selectedSeats.push({ id: siegeId, rang: rang, position: position });
-                } else {
-                    selectedSeats = selectedSeats.filter(seat => seat.id !== siegeId);
-                }
-                
-                updateSelection();
-            });
-        });
 
         function processSeatSelection() {
             if (selectedSeats.length === 0) {
@@ -509,9 +595,15 @@ $sieges_reserves = $stmt->fetchAll(PDO::FETCH_COLUMN);
                 return;
             }
 
+            if (selectedSeats.length !== maxSeats) {
+                alert(`Vous devez sélectionner exactement ${maxSeats} siège(s) pour ${maxSeats} passager(s).`);
+                return;
+            }
+
+            // Créer un formulaire pour soumettre les données
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = 'paiement.php';
+            form.action = 'reservation.php';
 
             const volInput = document.createElement('input');
             volInput.type = 'hidden';
@@ -519,17 +611,55 @@ $sieges_reserves = $stmt->fetchAll(PDO::FETCH_COLUMN);
             volInput.value = '<?php echo $vol_id; ?>';
             form.appendChild(volInput);
 
-            selectedSeats.forEach(function(seat) {
+            const passagersInput = document.createElement('input');
+            passagersInput.type = 'hidden';
+            passagersInput.name = 'passagers';
+            passagersInput.value = '<?php echo $passagers; ?>';
+            form.appendChild(passagersInput);
+
+            const classeInput = document.createElement('input');
+            classeInput.type = 'hidden';
+            classeInput.name = 'classe';
+            classeInput.value = '<?php echo $classe; ?>';
+            form.appendChild(classeInput);
+
+            selectedSeats.forEach(seatId => {
                 const input = document.createElement('input');
                 input.type = 'hidden';
                 input.name = 'sieges[]';
-                input.value = seat.id;
+                input.value = seatId;
                 form.appendChild(input);
             });
 
             document.body.appendChild(form);
             form.submit();
         }
+
+        // Gestion des sélections de sièges
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.seat input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const seatElement = this.closest('.seat');
+                    const seatId = seatElement.dataset.siegeId;
+                    const seatLabel = this.nextElementSibling.textContent;
+
+                    if (this.checked) {
+                        if (selectedSeats.length >= maxSeats) {
+                            this.checked = false;
+                            alert(`Vous ne pouvez sélectionner que ${maxSeats} siège(s) maximum.`);
+                            return;
+                        }
+                        selectedSeats.push(seatId);
+                        seatElement.classList.add('selected');
+                    } else {
+                        selectedSeats = selectedSeats.filter(id => id !== seatId);
+                        seatElement.classList.remove('selected');
+                    }
+                    
+                    updateSelectionSummary();
+                });
+            });
+        });
     </script>
 </body>
 </html>

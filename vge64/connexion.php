@@ -8,27 +8,24 @@ if (isset($_POST['connecter'])) {
     $email = trim($_POST['email']);
     $mdp = $_POST['password'] ?? '';
 
-    // Requête SQL : utilisateur avec email et mot de passe (en clair)
     $query = $pdo->prepare("SELECT * FROM users WHERE email = ? AND password = ?");
     $query->execute([$email, $mdp]);
     $user = $query->fetch(PDO::FETCH_ASSOC);
 
     if ($user) {
-        // Connexion réussie → enregistrer les infos
-        $_SESSION['id_user'] = $user['id_user'];
+        // CORRECTION : Utiliser les mêmes noms que dans votre header
+        $_SESSION['user_id'] = $user['id_user'];
+        $_SESSION['nom'] = $user['nom'];  // Votre header utilise $_SESSION['nom']
         $_SESSION['prenom'] = $user['prenom'];
-        $_SESSION['nom'] = $user['nom'];
         $_SESSION['email'] = $user['email'];
         $_SESSION['role'] = $user['role'];
         $_SESSION['statut'] = $user['statut'];
 
-        // Vérifie si le compte est actif
         if ($user['statut'] === 'inactif') {
             $message = "⚠️ Votre compte est inactif. Veuillez contacter l'administrateur.";
         } else {
-            // Redirection selon le rôle
             if ($user['role'] === 'admin') {
-                header("Location: ../admin/index1.php");
+                header("Location: ../dashboard/includes/header.php");
                 exit;
             } else {
                 header("Location: index2.php");
@@ -40,8 +37,6 @@ if (isset($_POST['connecter'])) {
     }
 }
 ?>
-
-
 
 <!DOCTYPE html>
 <html lang="fr">
