@@ -1,3 +1,4 @@
+
 <?php
 session_start();
 require_once 'includes/db.php';
@@ -13,10 +14,11 @@ $vol_id = intval($_GET['vol_id']);
 // Récupérer les paramètres optionnels
 $passagers = isset($_GET['passagers']) ? max(1, intval($_GET['passagers'])) : 1;
 $classe = $_GET['classe'] ?? 'économique';
+$sieges = $_GET['sieges'] ?? [];
 
 try {
     // Récupérer les données du vol depuis la base de données
-    $sql = "SELECT v.*, c.nom_compagnie, c.code_compagnie, a.modele as avion_modele
+    $sql = "SELECT v.*, c.nom_compagnie, c.code_compagnie, a.modele as avion_modele, a.id_avion
             FROM vols v 
             JOIN compagnies c ON v.id_compagnie = c.id_compagnie 
             JOIN avions a ON v.id_avion = a.id_avion
@@ -37,9 +39,21 @@ try {
     exit;
 }
 
-// Calculer le prix total
+// Calculer le prix total avec suppléments des sièges
 $price_per_passenger = floatval($vol['prix']);
-$total_price = $passagers * $price_per_passenger;
+$supplements = 0;
+
+// Récupérer les suppléments pour chaque siège sélectionné
+if (!empty($sieges)) {
+    $placeholders = str_repeat('?,', count($sieges) - 1) . '?';
+    $sql_sieges = "SELECT SUM(supplement_prix) as total_supplement FROM sieges_avion WHERE id_siege IN ($placeholders)";
+    $stmt_sieges = $pdo->prepare($sql_sieges);
+    $stmt_sieges->execute($sieges);
+    $result_sieges = $stmt_sieges->fetch(PDO::FETCH_ASSOC);
+    $supplements = $result_sieges['total_supplement'] ?? 0;
+}
+
+$total_price = ($passagers * $price_per_passenger) + $supplements;
 
 // Préparer les données pour l'affichage
 $vol_data = [
@@ -399,6 +413,26 @@ $vol_data = [
             background: #e2e8f0;
             z-index: 1;
         }
+
+        .selected-seats {
+            background: #f0f9ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2563eb;
+        }
+
+        .seat-badge {
+            background: #2563eb;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin: 5px;
+        }
     </style>
 </head>
 <body>
@@ -407,8 +441,8 @@ $vol_data = [
             <div class="header-top">
                 <a href="index.php" class="logo">Jet<span>Reserve</span></a>
                 <div class="auth-buttons">
-                    <?php if (isset($_SESSION['id_user'])): ?>
-                        <span style="margin-right: 15px; color: #64748b;">Bonjour, <?php echo htmlspecialchars($_SESSION['prenom'] ?? 'Utilisateur'); ?></span>
+                    <?php if (isset($_SESSION['user_id'])): ?>
+                        <span style="margin-right: 15px; color: #64748b;">Bonjour, <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Utilisateur'); ?></span>
                         <a href="vge64/index2.php" class="btn btn-outline">Mon compte</a>
                         <a href="vge64/logout.php" class="btn btn-primary">Déconnexion</a>
                     <?php else: ?>
@@ -437,6 +471,10 @@ $vol_data = [
             </div>
             <div class="progress-step">
                 <div class="step-number">4</div>
+                <div>Paiement</div>
+            </div>
+            <div class="progress-step">
+                <div class="step-number">5</div>
                 <div>Confirmation</div>
             </div>
         </div>
@@ -469,6 +507,29 @@ $vol_data = [
             <div class="booking-section">
                 <div class="flight-summary">
                     <h2 class="section-title">Détails du vol</h2>
+                    
+                    <!-- Affichage des sièges sélectionnés -->
+                    <?php if (!empty($sieges)): ?>
+                    <div class="selected-seats">
+                        <h4 style="color: #2563eb; margin-bottom: 10px;">Sièges sélectionnés</h4>
+                        <?php
+                        // Récupérer les noms des sièges
+                        if (!empty($sieges)) {
+                            $placeholders = str_repeat('?,', count($sieges) - 1) . '?';
+                            $sql_sieges_info = "SELECT id_siege, rang, position FROM sieges_avion WHERE id_siege IN ($placeholders)";
+                            $stmt_sieges_info = $pdo->prepare($sql_sieges_info);
+                            $stmt_sieges_info->execute($sieges);
+                            $sieges_info = $stmt_sieges_info->fetchAll(PDO::FETCH_ASSOC);
+                            
+                            foreach ($sieges_info as $siege): 
+                        ?>
+                            <div class="seat-badge">
+                                <i class="fas fa-chair"></i> <?php echo $siege['position'] . $siege['rang']; ?>
+                            </div>
+                        <?php endforeach; } ?>
+                    </div>
+                    <?php endif; ?>
+                    
                     <div class="flight-details">
                         <div class="flight-route">
                             <div class="flight-time"><?php echo date('H:i', strtotime($vol_data['departure_date'])); ?></div>
@@ -518,7 +579,7 @@ $vol_data = [
                     <div class="form-row">
                         <div class="form-group">
                             <label for="civilite">Civilité *</label>
-                            <select id="civilite" name="civilite" class="form-control" required <?php echo !isset($_SESSION['id_user']) ? 'disabled' : ''; ?>>
+                            <select id="civilite" name="civilite" class="form-control" required <?php echo !isset($_SESSION['user_id']) ? 'disabled' : ''; ?>>
                                 <option value="">Sélectionnez</option>
                                 <option value="M">Monsieur</option>
                                 <option value="Mme">Madame</option>
@@ -526,24 +587,24 @@ $vol_data = [
                         </div>
                         <div class="form-group">
                             <label for="phone">Téléphone *</label>
-                            <input type="tel" id="phone" name="phone" class="form-control" required <?php echo !isset($_SESSION['id_user']) ? 'disabled' : ''; ?>>
+                            <input type="tel" id="phone" name="phone" class="form-control" required <?php echo !isset($_SESSION['user_id']) ? 'disabled' : ''; ?>>
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label for="prenom">Prénom *</label>
-                            <input type="text" id="prenom" name="prenom" class="form-control" required <?php echo !isset($_SESSION['id_user']) ? 'disabled' : ''; ?>>
+                            <input type="text" id="prenom" name="prenom" class="form-control" required <?php echo !isset($_SESSION['user_id']) ? 'disabled' : ''; ?>>
                         </div>
                         <div class="form-group">
                             <label for="nom">Nom *</label>
-                            <input type="text" id="nom" name="nom" class="form-control" required <?php echo !isset($_SESSION['id_user']) ? 'disabled' : ''; ?>>
+                            <input type="text" id="nom" name="nom" class="form-control" required <?php echo !isset($_SESSION['user_id']) ? 'disabled' : ''; ?>>
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="email">Email *</label>
-                        <input type="email" id="email" name="email" class="form-control" required <?php echo !isset($_SESSION['id_user']) ? 'disabled' : ''; ?>>
+                        <input type="email" id="email" name="email" class="form-control" required <?php echo !isset($_SESSION['user_id']) ? 'disabled' : ''; ?>>
                     </div>
 
                     <h3 class="section-title">Informations des passagers</h3>
@@ -554,7 +615,7 @@ $vol_data = [
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="passenger<?php echo $i; ?>_civilite">Civilité *</label>
-                                <select id="passenger<?php echo $i; ?>_civilite" name="passengers[<?php echo $i; ?>][civilite]" class="form-control" required <?php echo !isset($_SESSION['id_user']) ? 'disabled' : ''; ?>>
+                                <select id="passenger<?php echo $i; ?>_civilite" name="passengers[<?php echo $i; ?>][civilite]" class="form-control" required <?php echo !isset($_SESSION['user_id']) ? 'disabled' : ''; ?>>
                                     <option value="">Sélectionnez</option>
                                     <option value="M">Monsieur</option>
                                     <option value="Mme">Madame</option>
@@ -563,58 +624,41 @@ $vol_data = [
                             </div>
                             <div class="form-group">
                                 <label for="passenger<?php echo $i; ?>_naissance">Date de naissance *</label>
-                                <input type="date" id="passenger<?php echo $i; ?>_naissance" name="passengers[<?php echo $i; ?>][naissance]" class="form-control" required <?php echo !isset($_SESSION['id_user']) ? 'disabled' : ''; ?>>
+                                <input type="date" id="passenger<?php echo $i; ?>_naissance" name="passengers[<?php echo $i; ?>][naissance]" class="form-control" required <?php echo !isset($_SESSION['user_id']) ? 'disabled' : ''; ?>>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="passenger<?php echo $i; ?>_prenom">Prénom *</label>
-                                <input type="text" id="passenger<?php echo $i; ?>_prenom" name="passengers[<?php echo $i; ?>][prenom]" class="form-control" required <?php echo !isset($_SESSION['id_user']) ? 'disabled' : ''; ?>>
+                                <input type="text" id="passenger<?php echo $i; ?>_prenom" name="passengers[<?php echo $i; ?>][prenom]" class="form-control" required <?php echo !isset($_SESSION['user_id']) ? 'disabled' : ''; ?>>
                             </div>
                             <div class="form-group">
                                 <label for="passenger<?php echo $i; ?>_nom">Nom *</label>
-                                <input type="text" id="passenger<?php echo $i; ?>_nom" name="passengers[<?php echo $i; ?>][nom]" class="form-control" required <?php echo !isset($_SESSION['id_user']) ? 'disabled' : ''; ?>>
+                                <input type="text" id="passenger<?php echo $i; ?>_nom" name="passengers[<?php echo $i; ?>][nom]" class="form-control" required <?php echo !isset($_SESSION['user_id']) ? 'disabled' : ''; ?>>
                             </div>
                         </div>
                     </div>
                     <?php endfor; ?>
-
-                    <h3 class="section-title">Paiement</h3>
-                    <div class="form-group">
-                        <label for="card_name">Nom sur la carte *</label>
-                        <input type="text" id="card_name" name="card_name" class="form-control" placeholder="JEAN DUPONT" required <?php echo !isset($_SESSION['id_user']) ? 'disabled' : ''; ?>>
-                    </div>
-                    <div class="form-group">
-                        <label for="card_number">Numéro de carte *</label>
-                        <input type="text" id="card_number" name="card_number" class="form-control" placeholder="1234 5678 9012 3456" required <?php echo !isset($_SESSION['id_user']) ? 'disabled' : ''; ?>>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="expiry_date">Date d'expiration *</label>
-                            <input type="text" id="expiry_date" name="expiry_date" class="form-control" placeholder="MM/AA" required <?php echo !isset($_SESSION['id_user']) ? 'disabled' : ''; ?>>
-                        </div>
-                        <div class="form-group">
-                            <label for="cvv">CVV *</label>
-                            <input type="text" id="cvv" name="cvv" class="form-control" placeholder="123" required <?php echo !isset($_SESSION['id_user']) ? 'disabled' : ''; ?>>
-                        </div>
-                    </div>
 
                     <!-- Champs cachés avec les données du vol -->
                     <input type="hidden" name="vol_id" value="<?php echo $vol_data['id_vol']; ?>">
                     <input type="hidden" name="passagers" value="<?php echo $passagers; ?>">
                     <input type="hidden" name="classe" value="<?php echo htmlspecialchars($classe); ?>">
                     <input type="hidden" name="total_price" value="<?php echo $total_price; ?>">
+                    <?php foreach ($sieges as $siege): ?>
+                        <input type="hidden" name="sieges[]" value="<?php echo $siege; ?>">
+                    <?php endforeach; ?>
 
                     <div class="form-group">
                         <label style="display: flex; align-items: start; gap: 10px; font-weight: normal; cursor: pointer;">
-                            <input type="checkbox" name="conditions" required style="margin-top: 3px;" <?php echo !isset($_SESSION['id_user']) ? 'disabled' : ''; ?>>
+                            <input type="checkbox" name="conditions" required style="margin-top: 3px;" <?php echo !isset($_SESSION['user_id']) ? 'disabled' : ''; ?>>
                             <span>J'accepte les <a href="#" style="color: #2563eb;">conditions générales</a> et la <a href="#" style="color: #2563eb;">politique de confidentialité</a> *</span>
                         </label>
                     </div>
 
-                    <?php if (isset($_SESSION['id_user'])): ?>
+                    <?php if (isset($_SESSION['user_id'])): ?>
                         <button type="submit" class="btn-submit">
-                            <i class="fas fa-credit-card"></i> Confirmer et payer <?php echo number_format($total_price + 9 + 25, 2, ',', ' '); ?>€
+                            <i class="fas fa-arrow-right"></i> Continuer vers le paiement
                         </button>
                     <?php else: ?>
                         <a href="vge64/connexion.php" class="btn-submit" style="text-align: center; text-decoration: none; display: block;">
@@ -631,8 +675,14 @@ $vol_data = [
                     <div class="price-breakdown">
                         <div class="price-item">
                             <span>Passager x<?php echo $passagers; ?> (<?php echo htmlspecialchars($classe); ?>)</span>
-                            <span><?php echo number_format($price_per_passenger, 2, ',', ' '); ?>€</span>
+                            <span><?php echo number_format($price_per_passenger * $passagers, 2, ',', ' '); ?>€</span>
                         </div>
+                        <?php if ($supplements > 0): ?>
+                        <div class="price-item">
+                            <span>Suppléments sièges</span>
+                            <span><?php echo number_format($supplements, 2, ',', ' '); ?>€</span>
+                        </div>
+                        <?php endif; ?>
                         <div class="price-item">
                             <span>Frais de service</span>
                             <span>9,00€</span>
@@ -670,27 +720,7 @@ $vol_data = [
         });
 
         function validateForm() {
-            // Validation carte de crédit
-            const cardNumber = document.getElementById('card_number').value.replace(/\s/g, '');
-            const expiryDate = document.getElementById('expiry_date').value;
-            const cvv = document.getElementById('cvv').value;
-            
-            if (cardNumber.length !== 16 || isNaN(cardNumber)) {
-                alert('Veuillez entrer un numéro de carte valide (16 chiffres)');
-                return false;
-            }
-            
-            if (!/^\d{2}\/\d{2}$/.test(expiryDate)) {
-                alert('Format de date d\'expiration invalide (MM/AA)');
-                return false;
-            }
-            
-            if (cvv.length !== 3 || isNaN(cvv)) {
-                alert('CVV invalide (3 chiffres)');
-                return false;
-            }
-
-            // Validation date de naissance
+            // Validation des dates de naissance
             const today = new Date();
             for (let i = 1; i <= <?php echo $passagers; ?>; i++) {
                 const birthDate = new Date(document.getElementById('passenger' + i + '_naissance').value);
@@ -703,23 +733,24 @@ $vol_data = [
             return true;
         }
 
-        // Formatage automatique de la carte
-        document.getElementById('card_number')?.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\s/g, '');
-            if (value.length > 0) {
-                value = value.match(new RegExp('.{1,4}', 'g')).join(' ');
-            }
-            e.target.value = value;
-        });
+        // Pré-remplir avec les données utilisateur si connecté
+        <?php if (isset($_SESSION['user_id'])): ?>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Pré-remplir les champs utilisateur si disponibles en session
+            const userData = {
+                nom: '<?php echo $_SESSION['user_name'] ?? ''; ?>',
+                email: '<?php echo $_SESSION['user_email'] ?? ''; ?>',
+                // Ajouter d'autres champs si disponibles
+            };
 
-        // Formatage automatique de la date d'expiration
-        document.getElementById('expiry_date')?.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length >= 2) {
-                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            if (userData.nom) {
+                document.getElementById('nom').value = userData.nom;
             }
-            e.target.value = value;
+            if (userData.email) {
+                document.getElementById('email').value = userData.email;
+            }
         });
+        <?php endif; ?>
     </script>
 </body>
 </html>

@@ -2,6 +2,13 @@
 require_once 'includes/db.php';
 session_start();
 
+// Vérifier si l'utilisateur est connecté
+if (!isset($_SESSION['user_id'])) {
+    $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI'];
+    header('Location: vge64/connexion.php');
+    exit;
+}
+
 // Récupérer l'ID du vol depuis l'URL
 $vol_id = isset($_GET['vol_id']) ? intval($_GET['vol_id']) : 0;
 
@@ -11,7 +18,7 @@ if (!$vol_id) {
 }
 
 // Récupérer les informations du vol
-$stmt = $pdo->prepare("SELECT v.*, c.nom_compagnie, a.modele as avion_modele, a.capacite, a.id_avion
+$stmt = $pdo->prepare("SELECT v.*, c.nom_compagnie, a.modele as avion_modele, a.capacite_total, a.id_avion
                       FROM vols v 
                       JOIN compagnies c ON v.id_compagnie = c.id_compagnie 
                       JOIN avions a ON v.id_avion = a.id_avion 
@@ -28,23 +35,48 @@ if (!$vol) {
 $passagers = isset($_GET['passagers']) ? intval($_GET['passagers']) : 1;
 $classe = $_GET['classe'] ?? 'économique';
 
-// Récupérer tous les sièges de l'avion
-$stmt = $pdo->prepare("SELECT * FROM sieges_avion WHERE id_avion = ? ORDER BY rangee, colonne");
+// Valider le nombre de passagers
+if ($passagers < 1 || $passagers > 10) {
+    $passagers = 1;
+}
+
+// Récupérer tous les sièges de l'avion avec les bons noms de colonnes
+$stmt = $pdo->prepare("SELECT * FROM sieges_avion WHERE id_avion = ? ORDER BY rang, position");
 $stmt->execute([$vol['id_avion']]);
 $sieges = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Récupérer les sièges déjà réservés pour ce vol
-$stmt = $pdo->prepare("SELECT rs.siege_id 
+// CORRECTION : Récupérer les sièges déjà réservés pour ce vol avec la bonne colonne
+$stmt = $pdo->prepare("SELECT rs.id_siege 
                       FROM reservation_sieges rs 
-                      JOIN reservations r ON rs.reservation_id = r.id 
-                      WHERE r.id_vol = ? AND r.statut IN ('confirmée', 'en_attente')");
+                      JOIN reservations r ON rs.id_reservation = r.id_reservation 
+                      WHERE r.id_vol = ? AND r.statut IN ('confirmé', 'en attente')");
 $stmt->execute([$vol_id]);
 $sieges_reserves = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
 // Organiser les sièges par rangée
-$sieges_par_rangee = [];
+$sieges_par_rang = [];
 foreach ($sieges as $siege) {
-    $sieges_par_rangee[$siege['rangee']][] = $siege;
+    $sieges_par_rang[$siege['rang']][] = $siege;
+}
+
+// Trier par rang
+ksort($sieges_par_rang);
+
+// Déterminer les rangées pour chaque cabine basée sur la classe réelle des sièges
+$rangees_affaires = [];
+$rangees_premiere = [];
+$rangees_economique = [];
+
+foreach ($sieges_par_rang as $rang => $sieges_rang) {
+    $classe_rang = $sieges_rang[0]['classe'] ?? 'économique';
+    
+    if ($classe_rang === 'première') {
+        $rangees_premiere[$rang] = $sieges_rang;
+    } elseif ($classe_rang === 'affaires') {
+        $rangees_affaires[$rang] = $sieges_rang;
+    } else {
+        $rangees_economique[$rang] = $sieges_rang;
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -395,7 +427,7 @@ foreach ($sieges as $siege) {
                 </div>
                 <div>
                     <strong>Avion: <?php echo htmlspecialchars($vol['avion_modele']); ?></strong>
-                    <div style="color: #64748b;">Capacité: <?php echo $vol['capacite']; ?> sièges</div>
+                    <div style="color: #64748b;">Capacité: <?php echo $vol['capacite_total']; ?> sièges</div>
                 </div>
             </div>
         </div>
@@ -429,23 +461,20 @@ foreach ($sieges as $siege) {
             </div>
 
             <div class="cabin-layout">
-                <!-- Cabine Affaires (premières rangées) -->
-                <?php if ($classe === 'affaires' || $classe === 'première'): ?>
+                <!-- Cabine Première -->
+                <?php if (!empty($rangees_premiere) && ($classe === 'première' || $classe === 'affaires')): ?>
                 <div class="cabin-section">
-                    <div class="cabin-title">Cabine Affaires</div>
-                    <?php
-                    $rangees_affaires = array_slice($sieges_par_rangee, 0, 6, true);
-                    foreach ($rangees_affaires as $rangee => $sieges_rangee): 
-                    ?>
+                    <div class="cabin-title">Cabine Première</div>
+                    <?php foreach ($rangees_premiere as $rang => $sieges_rang): ?>
                     <div class="seat-row">
-                        <div class="row-number"><?php echo $rangee; ?></div>
+                        <div class="row-number"><?php echo $rang; ?></div>
                         <?php
-                        // Configuration 2-2 pour la cabine affaires
-                        $colonnes_affaires = ['A', 'B', 'E', 'F'];
-                        foreach ($colonnes_affaires as $col_index => $colonne): 
+                        // Configuration pour première classe
+                        $positions_premiere = ['A', 'B', 'C', 'D', 'E', 'F'];
+                        foreach ($positions_premiere as $pos_index => $position): 
                             $siege_trouve = null;
-                            foreach ($sieges_rangee as $siege) {
-                                if ($siege['colonne'] === $colonne) {
+                            foreach ($sieges_rang as $siege) {
+                                if ($siege['position'] === $position) {
                                     $siege_trouve = $siege;
                                     break;
                                 }
@@ -460,14 +489,62 @@ foreach ($sieges as $siege) {
                                    name="sieges[]" value="<?php echo $siege_trouve['id_siege']; ?>" 
                                    <?php echo $est_reserve ? 'disabled' : ''; ?>>
                             <label for="siege_<?php echo $siege_trouve['id_siege']; ?>">
-                                <?php echo $siege_trouve['colonne'] . $rangee; ?>
+                                <?php echo $siege_trouve['position'] . $rang; ?>
                             </label>
                         </div>
                         <?php 
                             endif;
                             
-                            // Ajouter l'allée après les 2 premiers sièges
-                            if ($col_index === 1): 
+                            // Ajouter l'allée après les 3 premiers sièges
+                            if ($pos_index === 2): 
+                        ?>
+                        <div class="aisle">AISLE</div>
+                        <?php 
+                            endif;
+                        endforeach; 
+                        ?>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <div class="cabin-divider"></div>
+                <?php endif; ?>
+
+                <!-- Cabine Affaires -->
+                <?php if (!empty($rangees_affaires) && ($classe === 'affaires' || $classe === 'première')): ?>
+                <div class="cabin-section">
+                    <div class="cabin-title">Cabine Affaires</div>
+                    <?php foreach ($rangees_affaires as $rang => $sieges_rang): ?>
+                    <div class="seat-row">
+                        <div class="row-number"><?php echo $rang; ?></div>
+                        <?php
+                        // Configuration 2-2-2 pour cabine affaires
+                        $positions_affaires = ['A', 'B', 'C', 'D', 'E', 'F'];
+                        foreach ($positions_affaires as $pos_index => $position): 
+                            $siege_trouve = null;
+                            foreach ($sieges_rang as $siege) {
+                                if ($siege['position'] === $position) {
+                                    $siege_trouve = $siege;
+                                    break;
+                                }
+                            }
+                            
+                            if ($siege_trouve): 
+                                $est_reserve = in_array($siege_trouve['id_siege'], $sieges_reserves);
+                                $classe_siege = $est_reserve ? 'reserved' : 'available business';
+                        ?>
+                        <div class="seat <?php echo $classe_siege; ?>" data-siege-id="<?php echo $siege_trouve['id_siege']; ?>">
+                            <input type="checkbox" id="siege_<?php echo $siege_trouve['id_siege']; ?>" 
+                                   name="sieges[]" value="<?php echo $siege_trouve['id_siege']; ?>" 
+                                   <?php echo $est_reserve ? 'disabled' : ''; ?>>
+                            <label for="siege_<?php echo $siege_trouve['id_siege']; ?>">
+                                <?php echo $siege_trouve['position'] . $rang; ?>
+                            </label>
+                        </div>
+                        <?php 
+                            endif;
+                            
+                            // Ajouter l'allée après les 3 premiers sièges
+                            if ($pos_index === 2): 
                         ?>
                         <div class="aisle">AISLE</div>
                         <?php 
@@ -484,21 +561,22 @@ foreach ($sieges as $siege) {
                 <div class="cabin-section">
                     <div class="cabin-title">Cabine Économique</div>
                     <?php
-                    $rangees_economique = ($classe === 'affaires' || $classe === 'première') ? 
-                                         array_slice($sieges_par_rangee, 6, null, true) : 
-                                         $sieges_par_rangee;
+                    $rangees_a_afficher = $rangees_economique;
+                    if ($classe === 'économique') {
+                        $rangees_a_afficher = array_merge($rangees_affaires, $rangees_premiere, $rangees_economique);
+                    }
                     
-                    foreach ($rangees_economique as $rangee => $sieges_rangee): 
+                    foreach ($rangees_a_afficher as $rang => $sieges_rang): 
                     ?>
                     <div class="seat-row">
-                        <div class="row-number"><?php echo $rangee; ?></div>
+                        <div class="row-number"><?php echo $rang; ?></div>
                         <?php
                         // Configuration 3-3 pour la cabine économique
-                        $colonnes_economique = ['A', 'B', 'C', 'D', 'E', 'F'];
-                        foreach ($colonnes_economique as $col_index => $colonne): 
+                        $positions_economique = ['A', 'B', 'C', 'D', 'E', 'F'];
+                        foreach ($positions_economique as $pos_index => $position): 
                             $siege_trouve = null;
-                            foreach ($sieges_rangee as $siege) {
-                                if ($siege['colonne'] === $colonne) {
+                            foreach ($sieges_rang as $siege) {
+                                if ($siege['position'] === $position) {
                                     $siege_trouve = $siege;
                                     break;
                                 }
@@ -507,21 +585,27 @@ foreach ($sieges as $siege) {
                             if ($siege_trouve): 
                                 $est_reserve = in_array($siege_trouve['id_siege'], $sieges_reserves);
                                 $classe_siege = $est_reserve ? 'reserved' : 'available';
-                                if ($siege_trouve['type'] === 'premium') $classe_siege .= ' premium';
+                                
+                                // Appliquer la classe CSS selon le type de siège
+                                if ($siege_trouve['classe'] === 'première') {
+                                    $classe_siege .= ' business';
+                                } elseif ($siege_trouve['classe'] === 'affaires') {
+                                    $classe_siege .= ' premium';
+                                }
                         ?>
                         <div class="seat <?php echo $classe_siege; ?>" data-siege-id="<?php echo $siege_trouve['id_siege']; ?>">
                             <input type="checkbox" id="siege_<?php echo $siege_trouve['id_siege']; ?>" 
                                    name="sieges[]" value="<?php echo $siege_trouve['id_siege']; ?>" 
                                    <?php echo $est_reserve ? 'disabled' : ''; ?>>
                             <label for="siege_<?php echo $siege_trouve['id_siege']; ?>">
-                                <?php echo $siege_trouve['colonne'] . $rangee; ?>
+                                <?php echo $siege_trouve['position'] . $rang; ?>
                             </label>
                         </div>
                         <?php 
                             endif;
                             
                             // Ajouter l'allée après les 3 premiers sièges
-                            if ($col_index === 2): 
+                            if ($pos_index === 2): 
                         ?>
                         <div class="aisle">AISLE</div>
                         <?php 
@@ -576,7 +660,7 @@ foreach ($sieges as $siege) {
             selectedSeats.forEach(seat => {
                 const badge = document.createElement('div');
                 badge.className = 'seat-badge';
-                badge.innerHTML = `<i class="fas fa-chair"></i> ${seat}`;
+                badge.innerHTML = `<i class="fas fa-chair"></i> ${seat.label}`;
                 seatsList.appendChild(badge);
             });
             
@@ -584,6 +668,13 @@ foreach ($sieges as $siege) {
             
             if (selectedSeats.length > 0) {
                 summary.style.display = 'block';
+                
+                // Avertissement si sélection incomplète
+                if (selectedSeats.length < maxSeats) {
+                    selectedCount.innerHTML = `${selectedSeats.length} sur ${maxSeats} <span style="color: #ef4444;">(incomplet)</span>`;
+                } else {
+                    selectedCount.textContent = `${selectedSeats.length} sur ${maxSeats}`;
+                }
             } else {
                 summary.style.display = 'none';
             }
@@ -600,39 +691,9 @@ foreach ($sieges as $siege) {
                 return;
             }
 
-            // Créer un formulaire pour soumettre les données
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = 'reservation.php';
-
-            const volInput = document.createElement('input');
-            volInput.type = 'hidden';
-            volInput.name = 'vol_id';
-            volInput.value = '<?php echo $vol_id; ?>';
-            form.appendChild(volInput);
-
-            const passagersInput = document.createElement('input');
-            passagersInput.type = 'hidden';
-            passagersInput.name = 'passagers';
-            passagersInput.value = '<?php echo $passagers; ?>';
-            form.appendChild(passagersInput);
-
-            const classeInput = document.createElement('input');
-            classeInput.type = 'hidden';
-            classeInput.name = 'classe';
-            classeInput.value = '<?php echo $classe; ?>';
-            form.appendChild(classeInput);
-
-            selectedSeats.forEach(seatId => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'sieges[]';
-                input.value = seatId;
-                form.appendChild(input);
-            });
-
-            document.body.appendChild(form);
-            form.submit();
+            // Redirection vers la page de réservation avec les sièges sélectionnés
+            const siegesParams = selectedSeats.map(seat => `sieges[]=${seat.id}`).join('&');
+            window.location.href = `reservation.php?vol_id=<?php echo $vol_id; ?>&passagers=<?php echo $passagers; ?>&classe=<?php echo $classe; ?>&${siegesParams}`;
         }
 
         // Gestion des sélections de sièges
@@ -646,13 +707,16 @@ foreach ($sieges as $siege) {
                     if (this.checked) {
                         if (selectedSeats.length >= maxSeats) {
                             this.checked = false;
-                            alert(`Vous ne pouvez sélectionner que ${maxSeats} siège(s) maximum.`);
+                            alert(`Vous ne pouvez sélectionner que ${maxSeats} siège(s) maximum. Désélectionnez d'abord un siège.`);
                             return;
                         }
-                        selectedSeats.push(seatId);
+                        selectedSeats.push({
+                            id: seatId,
+                            label: seatLabel
+                        });
                         seatElement.classList.add('selected');
                     } else {
-                        selectedSeats = selectedSeats.filter(id => id !== seatId);
+                        selectedSeats = selectedSeats.filter(seat => seat.id !== seatId);
                         seatElement.classList.remove('selected');
                     }
                     

@@ -27,12 +27,6 @@ $nom = trim($_POST['nom'] ?? '');
 $email = trim($_POST['email'] ?? '');
 $phone = trim($_POST['phone'] ?? '');
 
-// Données de paiement
-$card_name = trim($_POST['card_name'] ?? '');
-$card_number = trim($_POST['card_number'] ?? '');
-$expiry_date = trim($_POST['expiry_date'] ?? '');
-$cvv = trim($_POST['cvv'] ?? '');
-
 // Données des passagers
 $passengers = $_POST['passengers'] ?? [];
 
@@ -51,10 +45,6 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $errors[] = "Adresse email invalide";
 }
 
-if (empty($card_name) || empty($card_number) || empty($expiry_date) || empty($cvv)) {
-    $errors[] = "Tous les champs de paiement sont obligatoires";
-}
-
 if (count($passengers) !== $passagers) {
     $errors[] = "Nombre de passagers incorrect";
 }
@@ -67,7 +57,8 @@ foreach ($passengers as $i => $passenger) {
 }
 
 if (!empty($errors)) {
-    header('Location: reservation.php?vol_id=' . $vol_id . '&error=' . urlencode(implode(', ', $errors)));
+    $_SESSION['reservation_errors'] = $errors;
+    header('Location: reservation.php?vol_id=' . $vol_id);
     exit;
 }
 
@@ -95,43 +86,45 @@ try {
     $taxes_aeroport = 25.00;
     $prix_total_final = $total_price + $frais_service + $taxes_aeroport;
     
-    // Insérer la réservation
-    $sql_reservation = "INSERT INTO reservations (id_user, id_vol, statut, nombre_passagers, prix_total) 
-                        VALUES (?, ?, 'en attente', ?, ?)";
+    // Insérer la réservation avec statut "en_attente_paiement"
+    $sql_reservation = "INSERT INTO reservations (id_user, id_vol, statut, nombre_passagers, prix_total, classe, date_reservation) 
+                        VALUES (?, ?, 'en_attente_paiement', ?, ?, ?, NOW())";
     
     $stmt_reservation = $pdo->prepare($sql_reservation);
-    $stmt_reservation->execute([$_SESSION['id_user'], $vol_id, $passagers, $prix_total_final]);
+    $stmt_reservation->execute([
+        $_SESSION['id_user'], 
+        $vol_id, 
+        $passagers, 
+        $prix_total_final,
+        $classe
+    ]);
     
     $reservation_id = $pdo->lastInsertId();
     
-    // Insérer le paiement
-    $sql_paiement = "INSERT INTO paiements (id_reservation, montant, mode_paiement, statut) 
-                     VALUES (?, ?, 'carte', 'réussi')";
+    // Insérer les informations des passagers
+    $sql_passager = "INSERT INTO passagers (id_reservation, civilite, prenom, nom, date_naissance) 
+                     VALUES (?, ?, ?, ?, ?)";
+    $stmt_passager = $pdo->prepare($sql_passager);
     
-    $stmt_paiement = $pdo->prepare($sql_paiement);
-    $stmt_paiement->execute([$reservation_id, $prix_total_final]);
-    
-    // Mettre à jour le nombre de places disponibles
-    $sql_update_places = "UPDATE vols SET places_disponibles = places_disponibles - ? WHERE id_vol = ?";
-    $stmt_update = $pdo->prepare($sql_update_places);
-    $stmt_update->execute([$passagers, $vol_id]);
-    
-    // Insérer un email de confirmation
-    $sql_email = "INSERT INTO emails (id_user, sujet, contenu, type, statut) 
-                  VALUES (?, ?, ?, 'confirmation', 'envoyé')";
-    
-    $contenu_email = "Votre réservation pour le vol " . $vol['code_compagnie'] . $vol['numero_vol'] . 
-                     " de " . $vol['depart'] . " vers " . $vol['arrivee'] . 
-                     " est confirmée. Montant total: " . number_format($prix_total_final, 2, ',', ' ') . "€";
-    
-    $stmt_email = $pdo->prepare($sql_email);
-    $stmt_email->execute([$_SESSION['id_user'], 'Confirmation de réservation', $contenu_email]);
+    foreach ($passengers as $passenger) {
+        $stmt_passager->execute([
+            $reservation_id,
+            $passenger['civilite'],
+            $passenger['prenom'],
+            $passenger['nom'],
+            $passenger['naissance']
+        ]);
+    }
     
     // Valider la transaction
     $pdo->commit();
     
-    // Rediriger vers la page de confirmation
-    header('Location: confirmation.php?reservation_id=' . $reservation_id);
+    // Stocker l'ID de réservation en session pour la page de paiement
+    $_SESSION['reservation_id'] = $reservation_id;
+    $_SESSION['prix_total'] = $prix_total_final;
+    
+    // Rediriger vers la page de paiement
+    header('Location: payment.php');
     exit;
     
 } catch (Exception $e) {
@@ -139,7 +132,8 @@ try {
     $pdo->rollBack();
     
     error_log("Erreur lors de la réservation: " . $e->getMessage());
-    header('Location: reservation.php?vol_id=' . $vol_id . '&error=erreur_reservation');
+    $_SESSION['reservation_errors'] = ["Une erreur est survenue lors de la réservation. Veuillez réessayer."];
+    header('Location: reservation.php?vol_id=' . $vol_id);
     exit;
 }
 ?>

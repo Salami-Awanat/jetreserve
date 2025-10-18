@@ -14,7 +14,7 @@ if (isset($_POST['connecter'])) {
 
     if ($user) {
         // CORRECTION : Utiliser les mêmes noms que dans votre header
-        $_SESSION['user_id'] = $user['id_user'];
+        $_SESSION['id_user'] = $user['id_user'];
         $_SESSION['nom'] = $user['nom'];  // Votre header utilise $_SESSION['nom']
         $_SESSION['prenom'] = $user['prenom'];
         $_SESSION['email'] = $user['email'];
