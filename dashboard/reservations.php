@@ -18,7 +18,7 @@ if (isset($_POST['change_status'])) {
     $new_status = $_POST['statut'];
     
     try {
-        $stmt = $pdo->prepare("UPDATE reservations SET statut = ? WHERE id = ?");
+        $stmt = $pdo->prepare("UPDATE reservations SET statut = ? WHERE id_reservation = ?");
         $stmt->execute([$new_status, $reservation_id]);
         
         $message = "Statut de la réservation modifié avec succès.";
@@ -35,11 +35,11 @@ if (isset($_GET['delete'])) {
     
     try {
         // Supprimer d'abord les sièges réservés
-        $stmt = $pdo->prepare("DELETE FROM reservation_sieges WHERE reservation_id = ?");
+        $stmt = $pdo->prepare("DELETE FROM reservation_sieges WHERE id_reservation = ?");
         $stmt->execute([$reservation_id]);
         
         // Puis supprimer la réservation
-        $stmt = $pdo->prepare("DELETE FROM reservations WHERE id = ?");
+        $stmt = $pdo->prepare("DELETE FROM reservations WHERE id_reservation = ?");
         $stmt->execute([$reservation_id]);
         
         $message = "Réservation supprimée avec succès.";
@@ -56,9 +56,9 @@ $stmt = $pdo->query("
            u.nom as user_nom, u.prenom as user_prenom, u.email as user_email,
            v.numero_vol, v.depart, v.arrivee, v.date_depart, v.date_arrivee, v.prix as vol_prix,
            c.nom_compagnie, c.code_compagnie,
-           (SELECT COUNT(*) FROM reservation_sieges rs WHERE rs.reservation_id = r.id) as sieges_count
+           (SELECT COUNT(*) FROM reservation_sieges rs WHERE rs.id_reservation = r.id_reservation) as sieges_count
     FROM reservations r 
-    JOIN utilisateurs u ON r.id_utilisateur = u.id 
+    JOIN users u ON r.id_user = u.id_user 
     JOIN vols v ON r.id_vol = v.id_vol 
     JOIN compagnies c ON v.id_compagnie = c.id_compagnie 
     ORDER BY r.date_reservation DESC
@@ -90,7 +90,7 @@ include 'includes/header.php';
             </div>
             <div class="stat-value">
                 <?php 
-                $stmt = $pdo->query("SELECT COUNT(*) as count FROM reservations WHERE statut = 'confirmée'");
+                $stmt = $pdo->query("SELECT COUNT(*) as count FROM reservations WHERE statut = 'confirmé'");
                 echo $stmt->fetch(PDO::FETCH_ASSOC)['count'];
                 ?>
             </div>
@@ -103,7 +103,7 @@ include 'includes/header.php';
             </div>
             <div class="stat-value">
                 <?php 
-                $stmt = $pdo->query("SELECT COUNT(*) as count FROM reservations WHERE statut = 'en_attente'");
+                $stmt = $pdo->query("SELECT COUNT(*) as count FROM reservations WHERE statut = 'en attente'");
                 echo $stmt->fetch(PDO::FETCH_ASSOC)['count'];
                 ?>
             </div>
@@ -116,7 +116,7 @@ include 'includes/header.php';
             </div>
             <div class="stat-value">
                 <?php 
-                $stmt = $pdo->query("SELECT COUNT(*) as count FROM reservations WHERE statut = 'annulée'");
+                $stmt = $pdo->query("SELECT COUNT(*) as count FROM reservations WHERE statut = 'annulé'");
                 echo $stmt->fetch(PDO::FETCH_ASSOC)['count'];
                 ?>
             </div>
@@ -129,7 +129,7 @@ include 'includes/header.php';
             </div>
             <div class="stat-value">
                 <?php 
-                $stmt = $pdo->query("SELECT SUM(prix_total) as total FROM reservations WHERE statut = 'confirmée'");
+                $stmt = $pdo->query("SELECT SUM(prix_total) as total FROM reservations WHERE statut = 'confirmé'");
                 $total = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
                 echo number_format($total, 0, ',', ' ');
                 ?>€
@@ -164,7 +164,7 @@ include 'includes/header.php';
                     <tbody>
                         <?php foreach ($reservations as $reservation): ?>
                         <tr>
-                            <td>#<?php echo $reservation['id']; ?></td>
+                            <td>#<?php echo $reservation['id_reservation']; ?></td>
                             <td>
                                 <strong><?php echo htmlspecialchars($reservation['user_prenom'] . ' ' . $reservation['user_nom']); ?></strong>
                                 <div style="color: #64748b; font-size: 0.8rem;"><?php echo htmlspecialchars($reservation['user_email']); ?></div>
@@ -179,7 +179,6 @@ include 'includes/header.php';
                             <td>
                                 <div style="font-size: 0.9rem;">
                                     <div><strong>Passagers:</strong> <?php echo $reservation['nombre_passagers']; ?></div>
-                                    <div><strong>Classe:</strong> <?php echo ucfirst($reservation['classe']); ?></div>
                                     <div><strong>Sièges:</strong> <?php echo $reservation['sieges_count']; ?></div>
                                 </div>
                             </td>
@@ -188,11 +187,11 @@ include 'includes/header.php';
                             </td>
                             <td>
                                 <form method="POST" class="status-form" style="display: inline-block;">
-                                    <input type="hidden" name="reservation_id" value="<?php echo $reservation['id']; ?>">
+                                    <input type="hidden" name="reservation_id" value="<?php echo $reservation['id_reservation']; ?>">
                                     <select name="statut" class="form-control form-control-sm" onchange="this.form.submit()" style="width: 120px;">
-                                        <option value="en_attente" <?php echo $reservation['statut'] === 'en_attente' ? 'selected' : ''; ?>>En attente</option>
-                                        <option value="confirmée" <?php echo $reservation['statut'] === 'confirmée' ? 'selected' : ''; ?>>Confirmée</option>
-                                        <option value="annulée" <?php echo $reservation['statut'] === 'annulée' ? 'selected' : ''; ?>>Annulée</option>
+                                        <option value="en attente" <?php echo $reservation['statut'] === 'en attente' ? 'selected' : ''; ?>>En attente</option>
+                                        <option value="confirmé" <?php echo $reservation['statut'] === 'confirmé' ? 'selected' : ''; ?>>Confirmé</option>
+                                        <option value="annulé" <?php echo $reservation['statut'] === 'annulé' ? 'selected' : ''; ?>>Annulé</option>
                                     </select>
                                     <button type="submit" name="change_status" style="display: none;"></button>
                                 </form>
@@ -200,10 +199,10 @@ include 'includes/header.php';
                             <td><?php echo date('d/m/Y H:i', strtotime($reservation['date_reservation'])); ?></td>
                             <td>
                                 <div class="action-buttons">
-                                    <button class="btn btn-primary btn-sm" title="Voir détails" onclick="showReservationDetails(<?php echo $reservation['id']; ?>)">
+                                    <button class="btn btn-primary btn-sm" title="Voir détails" onclick="showReservationDetails(<?php echo $reservation['id_reservation']; ?>)">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <a href="reservations.php?delete=<?php echo $reservation['id']; ?>" 
+                                    <a href="reservations.php?delete=<?php echo $reservation['id_reservation']; ?>" 
                                        class="btn btn-danger btn-sm" 
                                        title="Supprimer"
                                        onclick="return confirmAction('Êtes-vous sûr de vouloir supprimer cette réservation ?')">
@@ -303,6 +302,11 @@ include 'includes/header.php';
 <script>
 setPageTitle('Gestion des Réservations');
 
+// Confirmation pour la suppression
+function confirmAction(message) {
+    return confirm(message || 'Êtes-vous sûr de vouloir effectuer cette action ?');
+}
+
 // Recherche en temps réel
 document.getElementById('searchReservations').addEventListener('input', function() {
     const filter = this.value.toLowerCase();
@@ -316,6 +320,12 @@ document.getElementById('searchReservations').addEventListener('input', function
 
 // Afficher les détails d'une réservation
 function showReservationDetails(reservationId) {
+    // Pour l'instant, on va afficher une alerte simple
+    // Vous pourrez implémenter l'appel AJAX plus tard
+    alert('Détails de la réservation #' + reservationId + '\n\nFonctionnalité à implémenter avec AJAX');
+    
+    // Exemple d'implémentation future :
+    /*
     fetch(`api/get_reservation_details.php?id=${reservationId}`)
         .then(response => response.json())
         .then(data => {
@@ -330,6 +340,7 @@ function showReservationDetails(reservationId) {
             console.error('Error:', error);
             alert('Erreur lors du chargement des détails');
         });
+    */
 }
 
 // Fermer la modal
