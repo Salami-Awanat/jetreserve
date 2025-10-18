@@ -23,7 +23,7 @@ if (isset($_POST['add_user'])) {
     
     try {
         // Vérifier si l'email existe déjà
-        $stmt = $pdo->prepare("SELECT id FROM utilisateurs WHERE email = ?");
+        $stmt = $pdo->prepare("SELECT id_user FROM users WHERE email = ?");
         $stmt->execute([$email]);
         
         if ($stmt->rowCount() > 0) {
@@ -33,7 +33,7 @@ if (isset($_POST['add_user'])) {
             // Hasher le mot de passe
             $password_hash = password_hash($password, PASSWORD_DEFAULT);
             
-            $stmt = $pdo->prepare("INSERT INTO utilisateurs (nom, prenom, email, password, role, statut, date_inscription) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+            $stmt = $pdo->prepare("INSERT INTO users (nom, prenom, email, password, role, statut, date_creation) VALUES (?, ?, ?, ?, ?, ?, NOW())");
             $stmt->execute([$nom, $prenom, $email, $password_hash, $role, $statut]);
             
             $message = "Utilisateur ajouté avec succès.";
@@ -56,14 +56,14 @@ if (isset($_POST['edit_user'])) {
     
     try {
         // Vérifier si l'email existe déjà pour un autre utilisateur
-        $stmt = $pdo->prepare("SELECT id FROM utilisateurs WHERE email = ? AND id != ?");
+        $stmt = $pdo->prepare("SELECT id_user FROM users WHERE email = ? AND id_user != ?");
         $stmt->execute([$email, $user_id]);
         
         if ($stmt->rowCount() > 0) {
             $message = "Un autre utilisateur avec cet email existe déjà.";
             $message_type = 'error';
         } else {
-            $stmt = $pdo->prepare("UPDATE utilisateurs SET nom = ?, prenom = ?, email = ?, role = ?, statut = ? WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE users SET nom = ?, prenom = ?, email = ?, role = ?, statut = ? WHERE id_user = ?");
             $stmt->execute([$nom, $prenom, $email, $role, $statut, $user_id]);
             
             $message = "Utilisateur modifié avec succès.";
@@ -82,7 +82,7 @@ if (isset($_POST['change_password'])) {
     
     try {
         $password_hash = password_hash($new_password, PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare("UPDATE utilisateurs SET password = ? WHERE id = ?");
+        $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id_user = ?");
         $stmt->execute([$password_hash, $user_id]);
         
         $message = "Mot de passe modifié avec succès.";
@@ -99,7 +99,7 @@ if (isset($_GET['delete'])) {
     
     try {
         // Vérifier si l'utilisateur a des réservations
-        $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM reservations WHERE id_utilisateur = ?");
+        $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM reservations WHERE id_user = ?");
         $stmt->execute([$user_id]);
         $reservations_count = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
         
@@ -107,7 +107,7 @@ if (isset($_GET['delete'])) {
             $message = "Impossible de supprimer cet utilisateur car il a des réservations associées.";
             $message_type = 'error';
         } else {
-            $stmt = $pdo->prepare("DELETE FROM utilisateurs WHERE id = ?");
+            $stmt = $pdo->prepare("DELETE FROM users WHERE id_user = ?");
             $stmt->execute([$user_id]);
             
             $message = "Utilisateur supprimé avec succès.";
@@ -122,10 +122,10 @@ if (isset($_GET['delete'])) {
 // Récupérer tous les utilisateurs
 $stmt = $pdo->query("
     SELECT u.*, 
-           (SELECT COUNT(*) FROM reservations r WHERE r.id_utilisateur = u.id) as reservations_count,
-           (SELECT COUNT(*) FROM reservations r WHERE r.id_utilisateur = u.id AND r.statut = 'confirmée') as reservations_confirmees
-    FROM utilisateurs u 
-    ORDER BY u.date_inscription DESC
+           (SELECT COUNT(*) FROM reservations r WHERE r.id_user = u.id_user) as reservations_count,
+           (SELECT COUNT(*) FROM reservations r WHERE r.id_user = u.id_user AND r.statut = 'confirmé') as reservations_confirmees
+    FROM users u 
+    ORDER BY u.date_creation DESC
 ");
 $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -133,7 +133,7 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $user_to_edit = null;
 if (isset($_GET['edit'])) {
     $user_id = intval($_GET['edit']);
-    $stmt = $pdo->prepare("SELECT * FROM utilisateurs WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE id_user = ?");
     $stmt->execute([$user_id]);
     $user_to_edit = $stmt->fetch(PDO::FETCH_ASSOC);
 }
@@ -163,7 +163,7 @@ include 'includes/header.php';
         <div class="card-body">
             <form method="POST" class="form">
                 <?php if ($user_to_edit): ?>
-                    <input type="hidden" name="user_id" value="<?php echo $user_to_edit['id']; ?>">
+                    <input type="hidden" name="user_id" value="<?php echo $user_to_edit['id_user']; ?>">
                 <?php endif; ?>
                 
                 <div class="form-row">
@@ -196,7 +196,7 @@ include 'includes/header.php';
                     <div class="form-group">
                         <label class="form-label" for="role">Rôle *</label>
                         <select class="form-control" id="role" name="role" required>
-                            <option value="user" <?php echo ($user_to_edit && $user_to_edit['role'] === 'user') ? 'selected' : ''; ?>>Utilisateur</option>
+                            <option value="client" <?php echo ($user_to_edit && $user_to_edit['role'] === 'client') ? 'selected' : ''; ?>>Client</option>
                             <option value="admin" <?php echo ($user_to_edit && $user_to_edit['role'] === 'admin') ? 'selected' : ''; ?>>Administrateur</option>
                         </select>
                     </div>
@@ -205,7 +205,6 @@ include 'includes/header.php';
                         <select class="form-control" id="statut" name="statut" required>
                             <option value="actif" <?php echo ($user_to_edit && $user_to_edit['statut'] === 'actif') ? 'selected' : ''; ?>>Actif</option>
                             <option value="inactif" <?php echo ($user_to_edit && $user_to_edit['statut'] === 'inactif') ? 'selected' : ''; ?>>Inactif</option>
-                            <option value="banni" <?php echo ($user_to_edit && $user_to_edit['statut'] === 'banni') ? 'selected' : ''; ?>>Banni</option>
                         </select>
                     </div>
                 </div>
@@ -228,7 +227,7 @@ include 'includes/header.php';
             <hr style="margin: 30px 0;">
             <h3>Changer le mot de passe</h3>
             <form method="POST" class="form" style="max-width: 400px;">
-                <input type="hidden" name="user_id" value="<?php echo $user_to_edit['id']; ?>">
+                <input type="hidden" name="user_id" value="<?php echo $user_to_edit['id_user']; ?>">
                 <div class="form-group">
                     <label class="form-label" for="new_password">Nouveau mot de passe *</label>
                     <input type="password" class="form-control" id="new_password" name="new_password" required minlength="6">
@@ -267,7 +266,7 @@ include 'includes/header.php';
                     <tbody>
                         <?php foreach ($utilisateurs as $user): ?>
                         <tr>
-                            <td><?php echo $user['id']; ?></td>
+                            <td><?php echo $user['id_user']; ?></td>
                             <td>
                                 <strong><?php echo htmlspecialchars($user['prenom'] . ' ' . $user['nom']); ?></strong>
                             </td>
@@ -287,14 +286,14 @@ include 'includes/header.php';
                                     <?php echo $user['reservations_count']; ?> (<?php echo $user['reservations_confirmees']; ?>)
                                 </span>
                             </td>
-                            <td><?php echo date('d/m/Y', strtotime($user['date_inscription'])); ?></td>
+                            <td><?php echo date('d/m/Y', strtotime($user['date_creation'])); ?></td>
                             <td>
                                 <div class="action-buttons">
-                                    <a href="utilisateurs.php?edit=<?php echo $user['id']; ?>" class="btn btn-primary btn-sm" title="Modifier">
+                                    <a href="utilisateurs.php?edit=<?php echo $user['id_user']; ?>" class="btn btn-primary btn-sm" title="Modifier">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <?php if ($user['id'] != $_SESSION['user_id']): ?>
-                                    <a href="utilisateurs.php?delete=<?php echo $user['id']; ?>" 
+                                    <?php if ($user['id_user'] != $_SESSION['user_id']): ?>
+                                    <a href="utilisateurs.php?delete=<?php echo $user['id_user']; ?>" 
                                        class="btn btn-danger btn-sm" 
                                        title="Supprimer"
                                        onclick="return confirmAction('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')">
