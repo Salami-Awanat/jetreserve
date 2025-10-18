@@ -43,7 +43,7 @@
             <i class="fas fa-home"></i>
             <span>Site Public</span>
         </a>
-        <a href="../logout.php" class="menu-item">
+        <a href="../index.php" class="menu-item">
             <i class="fas fa-sign-out-alt"></i>
             <span>Déconnexion</span>
         </a>
