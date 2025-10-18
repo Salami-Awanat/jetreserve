@@ -25,7 +25,7 @@ if (isset($_POST['connecter'])) {
             $message = "⚠️ Votre compte est inactif. Veuillez contacter l'administrateur.";
         } else {
             if ($user['role'] === 'admin') {
-                header("Location: ../dashboard/includes/header.php");
+        header("Location: ../dashboard/index.php");
                 exit;
             } else {
                 header("Location: index2.php");
