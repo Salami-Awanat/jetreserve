@@ -54,7 +54,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                         </button>
                         <div class="dropdown-content">
                             <a href="../index.php"><i class="fas fa-home"></i> Site Public</a>
-                            <a href="../vge64/deconnexion.php"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+                            <a href="../index.php"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
                         </div>
                     </div>
                 </div>
