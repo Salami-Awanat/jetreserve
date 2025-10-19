@@ -1,6 +1,9 @@
 <?php
 require_once 'includes/db.php';
 
+// Démarrer la session pour vérifier si l'utilisateur est connecté
+session_start();
+
 // Récupérer les vols populaires depuis la base de données
 $stmt = $pdo->prepare("SELECT v.*, c.nom_compagnie, c.code_compagnie 
                       FROM vols v 
@@ -30,8 +33,15 @@ $vols_populaires = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="header-top">
                 <a href="#" class="logo">Jet<span>Reserve</span></a>
                 <div class="auth-buttons">
-                    <a href="vge64/connexion.php" class="btn btn-outline">Connexion</a>
-                    <a href="vge64/inscription.php" class="btn btn-primary">Inscription</a>
+                    <?php if (isset($_SESSION['id_user'])): ?>
+                        <!-- Si l'utilisateur est connecté -->
+                        <a href="vge64/index2.php" class="btn btn-outline">Mon compte</a>
+                        <a href="vge64/deconnexion.php" class="btn btn-primary">Déconnexion</a>
+                    <?php else: ?>
+                        <!-- Si l'utilisateur n'est pas connecté -->
+                        <a href="vge64/connexion.php" class="btn btn-outline">Connexion</a>
+                        <a href="vge64/inscription.php" class="btn btn-primary">Inscription</a>
+                    <?php endif; ?>
                 </div>
             </div>
             <nav class="nav-menu">
@@ -166,10 +176,20 @@ $vols_populaires = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <h3><?php echo htmlspecialchars($vol['depart']); ?> → <?php echo htmlspecialchars($vol['arrivee']); ?></h3>
                         <p><?php echo htmlspecialchars($vol['nom_compagnie']); ?> - Vol <?php echo htmlspecialchars($vol['code_compagnie'] . $vol['numero_vol']); ?></p>
                         <p>Départ: <?php echo date('d M Y, H:i', strtotime($vol['date_depart'])); ?></p>
-                        <div class="price">À partir de <?php echo htmlspecialchars($vol['prix']); ?>€</div>
-                        <a href="vge64/connexion.php" class="btn btn-primary btn-sm">
-                            <i class="fas fa-eye"></i> Voir les vols
-                        </a>
+                        <div class="price">À partir de <?php echo number_format($vol['prix'], 2, ',', ' '); ?>€</div>
+                        
+                        <!-- Modification ici : Lien vers la page de détails du vol -->
+                        <?php if (isset($_SESSION['id_user'])): ?>
+                            <!-- Si connecté : lien vers les détails du vol -->
+                            <a href="vol_details.php?id_vol=<?php echo $vol['id_vol']; ?>" class="btn btn-primary btn-sm">
+                                <i class="fas fa-eye"></i> Voir les détails
+                            </a>
+                        <?php else: ?>
+                            <!-- Si non connecté : lien vers la connexion avec redirection -->
+                            <a href="vge64/connexion.php?redirect=vol_details&id_vol=<?php echo $vol['id_vol']; ?>" class="btn btn-primary btn-sm">
+                                <i class="fas fa-eye"></i> Voir les détails
+                            </a>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <?php endforeach; ?>
