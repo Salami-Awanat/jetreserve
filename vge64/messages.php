@@ -1,3 +1,42 @@
+<?php
+session_start();
+require_once '../includes/db.php';
+
+if (!isset($_SESSION['id_user'])) {
+    header('Location: connexion.php');
+    exit;
+}
+
+// Récupérer tous les emails de l'utilisateur
+try {
+    $stmt = $pdo->prepare("
+        SELECT e.*, 
+               DATE_FORMAT(e.date_envoi, '%d/%m/%Y %H:%i') as date_formatee,
+               DATE_FORMAT(e.date_envoi, '%H:%i') as heure_envoi
+        FROM emails e
+        WHERE e.id_user = ?
+        ORDER BY e.date_envoi DESC
+    ");
+    $stmt->execute([$_SESSION['id_user']]);
+    $emails = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $emails = [];
+}
+
+// Récupérer les emails non lus
+try {
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) as nb_non_lus 
+        FROM emails 
+        WHERE id_user = ? AND statut = 'envoyé'
+    ");
+    $stmt->execute([$_SESSION['id_user']]);
+    $non_lus = $stmt->fetch(PDO::FETCH_ASSOC)['nb_non_lus'];
+} catch (PDOException $e) {
+    $non_lus = 0;
+}
+?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -42,66 +81,23 @@
     font-weight: 600;
 }
 
-.new-message-btn {
+.email-count {
     background: var(--info);
     color: var(--white);
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
     font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.3s ease;
-    cursor: pointer;
 }
 
-.new-message-btn:hover {
-    background: var(--primary);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
-}
-
-.messages-content {
-    display: flex;
-    min-height: 600px;
-}
-
-/* Liste des conversations */
-.conversations-list {
-    width: 350px;
-    border-right: 1px solid var(--border-color);
-    background: var(--light-gray);
-}
-
-.conversations-search {
-    padding: 1rem;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.search-input {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    font-family: 'Poppins', sans-serif;
-    background: var(--white);
-    transition: all 0.3s ease;
-}
-
-.search-input:focus {
-    outline: none;
-    border-color: var(--info);
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-}
-
-.conversations {
-    max-height: 500px;
+/* Liste des emails */
+.emails-list {
+    max-height: 600px;
     overflow-y: auto;
 }
 
-.conversation-item {
-    padding: 1rem;
+.email-item {
+    padding: 1.5rem;
     border-bottom: 1px solid var(--border-color);
     cursor: pointer;
     transition: all 0.3s ease;
@@ -110,17 +106,22 @@
     background: var(--white);
 }
 
-.conversation-item:hover {
+.email-item:hover {
     background: var(--light-gray);
     transform: translateX(3px);
 }
 
-.conversation-item.active {
+.email-item.unread {
     background: #e0f2fe;
     border-left: 3px solid var(--info);
 }
 
-.conversation-avatar {
+.email-item.active {
+    background: var(--light-gray);
+    border-left: 3px solid var(--primary);
+}
+
+.email-avatar {
     width: 50px;
     height: 50px;
     border-radius: 50%;
@@ -134,75 +135,95 @@
     flex-shrink: 0;
 }
 
-.conversation-info {
+.email-info {
     flex: 1;
     min-width: 0;
 }
 
-.conversation-header {
+.email-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.5rem;
 }
 
-.conversation-name {
+.email-sender {
+    font-weight: 600;
+    color: var(--dark);
+    font-size: 1rem;
+}
+
+.email-time {
+    font-size: 0.8rem;
+    color: var(--gray);
+}
+
+.email-subject {
     font-weight: 600;
     color: var(--dark);
     font-size: 0.95rem;
+    margin-bottom: 0.25rem;
 }
 
-.conversation-time {
-    font-size: 0.75rem;
-    color: var(--gray);
-}
-
-.conversation-preview {
+.email-preview {
     font-size: 0.85rem;
     color: var(--gray);
-    white-space: nowrap;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
 }
 
-.conversation-badge {
-    background: var(--danger);
-    color: var(--white);
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.email-type {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
     font-size: 0.7rem;
-    margin-top: 0.25rem;
-    flex-shrink: 0;
+    font-weight: 500;
+    margin-top: 0.5rem;
 }
 
-/* Zone de chat */
-.chat-area {
+.type-confirmation { background: #d1fae5; color: #065f46; }
+.type-recu { background: #fef3c7; color: #92400e; }
+.type-ticket { background: #e0e7ff; color: #3730a3; }
+
+/* Zone de lecture */
+.email-reader {
     flex: 1;
     display: flex;
     flex-direction: column;
     background: var(--white);
 }
 
-.chat-header {
-    padding: 1rem 1.5rem;
+.email-reader-header {
+    padding: 1.5rem;
     border-bottom: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     background: var(--light-gray);
 }
 
-.chat-contact {
+.email-reader-subject {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 1rem;
+}
+
+.email-reader-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.email-sender-info {
     display: flex;
     align-items: center;
     gap: 1rem;
 }
 
-.chat-contact-avatar {
+.email-sender-avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -215,85 +236,37 @@
     flex-shrink: 0;
 }
 
-.chat-contact-info h4 {
+.email-sender-details h4 {
     margin: 0;
     font-size: 1rem;
     color: var(--dark);
     font-weight: 600;
 }
 
-.chat-contact-info p {
+.email-sender-details p {
     margin: 0;
     font-size: 0.8rem;
     color: var(--gray);
 }
 
-.chat-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.chat-action-btn {
-    background: none;
-    border: none;
+.email-date {
+    font-size: 0.9rem;
     color: var(--gray);
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 5px;
-    transition: all 0.3s ease;
-    font-size: 1rem;
 }
 
-.chat-action-btn:hover {
-    background: var(--light-gray);
+.email-content {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    line-height: 1.6;
     color: var(--dark);
 }
 
-.messages-area {
-    flex: 1;
-    padding: 1.5rem;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    background: var(--light-gray);
+.email-content p {
+    margin-bottom: 1rem;
 }
 
-.message {
-    max-width: 70%;
-    padding: 1rem;
-    border-radius: 15px;
-    position: relative;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.message.received {
-    align-self: flex-start;
-    background: var(--white);
-    border-bottom-left-radius: 5px;
-    border: 1px solid var(--border-color);
-}
-
-.message.sent {
-    align-self: flex-end;
-    background: linear-gradient(135deg, var(--info), var(--primary));
-    color: var(--white);
-    border-bottom-right-radius: 5px;
-}
-
-.message-text {
-    font-size: 0.9rem;
-    line-height: 1.4;
-}
-
-.message-time {
-    font-size: 0.7rem;
-    margin-top: 0.5rem;
-    opacity: 0.7;
-    text-align: right;
-}
-
-.message-input-area {
+.email-actions {
     padding: 1rem 1.5rem;
     border-top: 1px solid var(--border-color);
     display: flex;
@@ -301,43 +274,23 @@
     background: var(--white);
 }
 
-.message-input {
-    flex: 1;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--border-color);
-    border-radius: 25px;
-    font-family: 'Poppins', sans-serif;
-    resize: none;
+.email-action-btn {
     background: var(--light-gray);
-    transition: all 0.3s ease;
-}
-
-.message-input:focus {
-    outline: none;
-    border-color: var(--info);
-    background: var(--white);
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-}
-
-.send-btn {
-    background: var(--info);
-    color: var(--white);
-    border: none;
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.3s ease;
-    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-.send-btn:hover {
-    background: var(--primary);
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+.email-action-btn:hover {
+    background: var(--info);
+    color: var(--white);
+    border-color: var(--info);
 }
 
 /* État vide */
@@ -348,14 +301,19 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 2rem;
+    padding: 3rem;
     color: var(--gray);
 }
 
 .empty-state i {
-    font-size: 3rem;
+    font-size: 4rem;
     margin-bottom: 1rem;
     color: var(--border-color);
+}
+
+.empty-state h3 {
+    margin-bottom: 0.5rem;
+    color: var(--dark);
 }
 
 /* Responsive */
@@ -364,30 +322,32 @@
         flex-direction: column;
     }
     
-    .conversations-list {
+    .emails-list {
         width: 100%;
         border-right: none;
         border-bottom: 1px solid var(--border-color);
-        max-height: 300px;
+        max-height: 400px;
     }
     
-    .conversations {
-        max-height: 200px;
-    }
-    
-    .message {
-        max-width: 85%;
-    }
-    
-    .chat-header {
+    .email-item {
         padding: 1rem;
     }
     
-    .messages-area {
+    .email-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .email-reader-header {
         padding: 1rem;
     }
     
-    .message-input-area {
+    .email-content {
+        padding: 1rem;
+    }
+    
+    .email-actions {
         padding: 1rem;
     }
 }
@@ -399,32 +359,14 @@
         align-items: flex-start;
     }
     
-    .conversation-item {
-        padding: 0.75rem;
+    .email-reader-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
     }
     
-    .conversation-avatar {
-        width: 40px;
-        height: 40px;
-        font-size: 1rem;
-    }
-    
-    .chat-contact {
-        gap: 0.75rem;
-    }
-    
-    .chat-contact-avatar {
-        width: 35px;
-        height: 35px;
-    }
-    
-    .chat-contact-info h4 {
-        font-size: 0.9rem;
-    }
-    
-    .message {
-        max-width: 90%;
-        padding: 0.75rem;
+    .email-sender-info {
+        width: 100%;
     }
 }
     </style>
@@ -442,7 +384,7 @@
                             <?php echo $_SESSION['prenom'] ?? 'Client'; ?>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="index1.php"><i class="fas fa-home me-2"></i>Accueil client</a></li>
+                            <li><a class="dropdown-item" href="index2.php"><i class="fas fa-home me-2"></i>Accueil client</a></li>
                             <li><a class="dropdown-item" href="profile.php"><i class="fas fa-user me-2"></i>Mon profil</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item text-danger" href="../index.php">
@@ -473,32 +415,22 @@
         <div class="main-banner owl-carousel owl-theme">
             <div class="item banner-1">
                 <div class="header-text">
-                    <h2>Bienvenu sur votre compte</h2>
+                    <h2>Mes Messages</h2>
                 </div>
             </div>
             <div class="item banner-2">
                 <div class="header-text">
-                    <h2>Accédez à vos réservations</h2>
+                    <h2>Communication avec JetReserve</h2>
                 </div>
             </div>
             <div class="item banner-3">
                 <div class="header-text">
-                    <h2>Gérez vos voyages</h2>
-                </div>
-            </div>
-            <div class="item banner-4">
-                <div class="header-text">
-                    <h2>Voyagez en toute sérénité</h2>
-                </div>
-            </div>
-            <div class="item banner-5">
-                <div class="header-text">
-                    <h2>Retrouvez vos avantages</h2>
+                    <h2>Notifications importantes</h2>
                 </div>
             </div>
         </div>
-    </div> <!-- Fermeture correcte de la div main-banner-container -->
-        
+    </div>
+
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
@@ -531,6 +463,9 @@
                             <a class="nav-link active" href="messages.php">
                                 <i class="fas fa-envelope me-2"></i>
                                 Messages
+                                <?php if ($non_lus > 0): ?>
+                                    <span class="badge bg-danger ms-2"><?php echo $non_lus; ?></span>
+                                <?php endif; ?>
                             </a>
                         </li>
                         <li class="nav-item">
@@ -554,134 +489,123 @@
                 <div class="messages-container">
                     <div class="messages-header">
                         <h2><i class="fas fa-envelope"></i> Mes Messages</h2>
-                        <button class="new-message-btn" id="newMessageBtn">
-                            <i class="fas fa-plus"></i> Nouveau message
-                        </button>
+                        <div class="email-count">
+                            <?php echo count($emails); ?> message(s)
+                            <?php if ($non_lus > 0): ?>
+                                • <?php echo $non_lus; ?> non lu(s)
+                            <?php endif; ?>
+                        </div>
                     </div>
                     
                     <div class="messages-content">
-                        <!-- Conversations List -->
-                        <div class="conversations-list">
-                            <div class="conversations-search">
-                                <input type="text" class="search-input" placeholder="Rechercher un message...">
-                            </div>
-                            <div class="conversations">
-                                <!-- Conversation 1 -->
-                                <div class="conversation-item active" data-conversation="1">
-                                    <div class="conversation-avatar" style="background: var(--success);">
-                                        <span>SC</span>
-                                    </div>
-                                    <div class="conversation-info">
-                                        <div class="conversation-header">
-                                            <div class="conversation-name">Service Client</div>
-                                            <div class="conversation-time">10:30</div>
-                                        </div>
-                                        <div class="conversation-preview">Votre réservation Paris-New York a été confirmée...</div>
-                                    </div>
-                                    <div class="conversation-badge">2</div>
+                        <!-- Liste des emails -->
+                        <div class="emails-list">
+                            <?php if (empty($emails)): ?>
+                                <div class="empty-state">
+                                    <i class="fas fa-envelope-open"></i>
+                                    <h3>Aucun message</h3>
+                                    <p>Vous n'avez pas encore reçu de messages de JetReserve.</p>
                                 </div>
-                                
-                                <!-- Conversation 2 -->
-                                <div class="conversation-item" data-conversation="2">
-                                    <div class="conversation-avatar" style="background: var(--warning);">
-                                        <span>PR</span>
-                                    </div>
-                                    <div class="conversation-info">
-                                        <div class="conversation-header">
-                                            <div class="conversation-name">Promotions</div>
-                                            <div class="conversation-time">Hier</div>
+                            <?php else: ?>
+                                <?php foreach ($emails as $index => $email): ?>
+                                    <div class="email-item <?php echo $index === 0 ? 'active' : ''; ?>" 
+                                         data-email-id="<?php echo $email['id_email']; ?>"
+                                         onclick="loadEmail(<?php echo $email['id_email']; ?>)">
+                                        <div class="email-avatar" style="background: 
+                                            <?php 
+                                            switch($email['type']) {
+                                                case 'confirmation': echo 'var(--success);'; break;
+                                                case 'recu': echo 'var(--warning);'; break;
+                                                case 'ticket': echo 'var(--info);'; break;
+                                                default: echo 'var(--primary);';
+                                            }
+                                            ?>">
+                                            <span>JR</span>
                                         </div>
-                                        <div class="conversation-preview">Nouvelle offre spéciale pour vos prochains voyages...</div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Conversation 3 -->
-                                <div class="conversation-item" data-conversation="3">
-                                    <div class="conversation-avatar" style="background: var(--danger);">
-                                        <span>AS</span>
-                                    </div>
-                                    <div class="conversation-info">
-                                        <div class="conversation-header">
-                                            <div class="conversation-name">Assistance Bagages</div>
-                                            <div class="conversation-time">15/06</div>
+                                        <div class="email-info">
+                                            <div class="email-header">
+                                                <div class="email-sender">JetReserve</div>
+                                                <div class="email-time"><?php echo $email['heure_envoi']; ?></div>
+                                            </div>
+                                            <div class="email-subject"><?php echo htmlspecialchars($email['sujet']); ?></div>
+                                            <div class="email-preview">
+                                                <?php 
+                                                $preview = strip_tags($email['contenu']);
+                                                echo strlen($preview) > 100 ? substr($preview, 0, 100) . '...' : $preview;
+                                                ?>
+                                            </div>
+                                            <span class="email-type type-<?php echo $email['type']; ?>">
+                                                <?php 
+                                                switch($email['type']) {
+                                                    case 'confirmation': echo 'Confirmation'; break;
+                                                    case 'recu': echo 'Reçu'; break;
+                                                    case 'ticket': echo 'Billet'; break;
+                                                    default: echo ucfirst($email['type']);
+                                                }
+                                                ?>
+                                            </span>
                                         </div>
-                                        <div class="conversation-preview">Votre demande d'assistance a été traitée...</div>
                                     </div>
-                                </div>
-                                
-                                <!-- Conversation 4 -->
-                                <div class="conversation-item" data-conversation="4">
-                                    <div class="conversation-avatar" style="background: #8b5cf6;">
-                                        <span>FP</span>
-                                    </div>
-                                    <div class="conversation-info">
-                                        <div class="conversation-header">
-                                            <div class="conversation-name">Fidélité Premium</div>
-                                            <div class="conversation-time">12/06</div>
-                                        </div>
-                                        <div class="conversation-preview">Nouveaux avantages pour les membres Premium...</div>
-                                    </div>
-                                </div>
-                            </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </div>
                         
-                        <!-- Chat Area -->
-                        <div class="chat-area">
-                            <div class="chat-header">
-                                <div class="chat-contact">
-                                    <div class="chat-contact-avatar" style="background: var(--success);">
-                                        <span>SC</span>
+                        <!-- Zone de lecture -->
+                        <div class="email-reader">
+                            <?php if (!empty($emails)): ?>
+                                <div class="email-reader-header">
+                                    <div class="email-reader-subject">
+                                        <?php echo htmlspecialchars($emails[0]['sujet']); ?>
                                     </div>
-                                    <div class="chat-contact-info">
-                                        <h4>Service Client JetReserve</h4>
-                                        <p>En ligne • Réponse sous 24h</p>
+                                    <div class="email-reader-meta">
+                                        <div class="email-sender-info">
+                                            <div class="email-sender-avatar" style="background: 
+                                                <?php 
+                                                switch($emails[0]['type']) {
+                                                    case 'confirmation': echo 'var(--success);'; break;
+                                                    case 'recu': echo 'var(--warning);'; break;
+                                                    case 'ticket': echo 'var(--info);'; break;
+                                                    default: echo 'var(--primary);';
+                                                }
+                                                ?>">
+                                                <span>JR</span>
+                                            </div>
+                                            <div class="email-sender-details">
+                                                <h4>JetReserve</h4>
+                                                <p>Service Client</p>
+                                            </div>
+                                        </div>
+                                        <div class="email-date">
+                                            <?php echo $emails[0]['date_formatee']; ?>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="chat-actions">
-                                    <button class="chat-action-btn">
-                                        <i class="fas fa-phone-alt"></i>
-                                    </button>
-                                    <button class="chat-action-btn">
-                                        <i class="fas fa-video"></i>
-                                    </button>
-                                    <button class="chat-action-btn">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="messages-area" id="messagesArea">
-                                <!-- Message reçu -->
-                                <div class="message received">
-                                    <div class="message-text">
-                                        Bonjour <?php echo $_SESSION['prenom'] ?? 'Client'; ?>, votre réservation pour le vol Paris-New York (JET1234) du 15 juin a été confirmée. Votre numéro de réservation est JR20230615001.
-                                    </div>
-                                    <div class="message-time">10:15</div>
                                 </div>
                                 
-                                <!-- Message envoyé -->
-                                <div class="message sent">
-                                    <div class="message-text">
-                                        Merci pour la confirmation. J'aimerais ajouter un bagage supplémentaire à ma réservation.
-                                    </div>
-                                    <div class="message-time">10:22</div>
+                                <div class="email-content" id="emailContent">
+                                    <?php echo nl2br(htmlspecialchars($emails[0]['contenu'])); ?>
                                 </div>
                                 
-                                <!-- Message reçu -->
-                                <div class="message received">
-                                    <div class="message-text">
-                                        Bien sûr, je peux vous aider avec cela. Un bagage supplémentaire de 23kg coûte 35€. Souhaitez-vous que je l'ajoute à votre réservation ?
-                                    </div>
-                                    <div class="message-time">10:30</div>
+                                <div class="email-actions">
+                                    <button class="email-action-btn" onclick="replyToEmail()">
+                                        <i class="fas fa-reply"></i> Répondre
+                                    </button>
+                                    <button class="email-action-btn" onclick="forwardEmail()">
+                                        <i class="fas fa-share"></i> Transférer
+                                    </button>
+                                    <button class="email-action-btn" onclick="printEmail()">
+                                        <i class="fas fa-print"></i> Imprimer
+                                    </button>
+                                    <button class="email-action-btn" onclick="deleteEmail()">
+                                        <i class="fas fa-trash"></i> Supprimer
+                                    </button>
                                 </div>
-                            </div>
-                            
-                            <div class="message-input-area">
-                                <textarea class="message-input" placeholder="Tapez votre message..." rows="1"></textarea>
-                                <button class="send-btn">
-                                    <i class="fas fa-paper-plane"></i>
-                                </button>
-                            </div>
+                            <?php else: ?>
+                                <div class="empty-state">
+                                    <i class="fas fa-envelope-open"></i>
+                                    <h3>Aucun message sélectionné</h3>
+                                    <p>Sélectionnez un message dans la liste pour le lire.</p>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -757,141 +681,70 @@
                 animateOut: 'fadeOut',
                 animateIn: 'fadeIn'
             });
-            // Gestion de la sélection des conversations
-            $('.conversation-item').on('click', function() {
-                $('.conversation-item').removeClass('active');
-                $(this).addClass('active');
-                
-                // Ici, vous chargeriez les messages de la conversation sélectionnée
-                const conversationId = $(this).data('conversation');
-                loadConversation(conversationId);
-            });
-            
-            // Nouveau message
-            $('#newMessageBtn').on('click', function() {
-                alert('Fonctionnalité de nouveau message à implémenter');
-                // Ouvrir un modal pour composer un nouveau message
-            });
-            
-            // Envoi de message
-            $('.send-btn').on('click', function() {
-                sendMessage();
-            });
-            
-            // Envoi avec la touche Entrée
-            $('.message-input').on('keypress', function(e) {
-                if (e.which === 13 && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                }
-            });
-            
-            // Fonction pour envoyer un message
-            function sendMessage() {
-                const messageInput = $('.message-input');
-                const messageText = messageInput.val().trim();
-                
-                if (messageText) {
-                    // Ajouter le message à l'interface
-                    const timestamp = new Date().toLocaleTimeString('fr-FR', { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                    });
-                    
-                    const messageHtml = `
-                        <div class="message sent">
-                            <div class="message-text">${messageText}</div>
-                            <div class="message-time">${timestamp}</div>
-                        </div>
-                    `;
-                    
-                    $('#messagesArea').append(messageHtml);
-                    messageInput.val('');
-                    
-                    // Faire défiler vers le bas
-                    $('#messagesArea').scrollTop($('#messagesArea')[0].scrollHeight);
-                    
-                    // Simulation de réponse automatique après 2 secondes
-                    setTimeout(function() {
-                        const responses = [
-                            "Nous avons bien reçu votre message et nous vous répondrons dans les plus brefs délais.",
-                            "Merci pour votre message. Un de nos conseillers vous répondra rapidement.",
-                            "Votre demande a été transmise à notre équipe. Nous reviendrons vers vous rapidement."
-                        ];
-                        
-                        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                        
-                        const responseHtml = `
-                            <div class="message received">
-                                <div class="message-text">${randomResponse}</div>
-                                <div class="message-time">${new Date().toLocaleTimeString('fr-FR', { 
-                                    hour: '2-digit', 
-                                    minute: '2-digit' 
-                                })}</div>
-                            </div>
-                        `;
-                        
-                        $('#messagesArea').append(responseHtml);
-                        $('#messagesArea').scrollTop($('#messagesArea')[0].scrollHeight);
-                    }, 2000);
-                }
-            }
-            
-            // Fonction pour charger une conversation (simulée)
-            function loadConversation(conversationId) {
-                // En production, vous feriez un appel AJAX pour charger les messages
-                console.log('Chargement de la conversation ' + conversationId);
-                
-                // Simulation de chargement
-                $('#messagesArea').html('<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Chargement des messages...</p></div>');
-                
-                setTimeout(function() {
-                    // Messages simulés selon la conversation
-                    let messagesHtml = '';
-                    
-                    if (conversationId == 1) {
-                        messagesHtml = `
-                            <div class="message received">
-                                <div class="message-text">
-                                    Bonjour ${$('.conversation-name').first().text()}, votre réservation pour le vol Paris-New York (JET1234) du 15 juin a été confirmée. Votre numéro de réservation est JR20230615001.
-                                </div>
-                                <div class="message-time">10:15</div>
-                            </div>
-                            <div class="message sent">
-                                <div class="message-text">
-                                    Merci pour la confirmation. J'aimerais ajouter un bagage supplémentaire à ma réservation.
-                                </div>
-                                <div class="message-time">10:22</div>
-                            </div>
-                            <div class="message received">
-                                <div class="message-text">
-                                    Bien sûr, je peux vous aider avec cela. Un bagage supplémentaire de 23kg coûte 35€. Souhaitez-vous que je l'ajoute à votre réservation ?
-                                </div>
-                                <div class="message-time">10:30</div>
-                            </div>
-                        `;
-                    } else if (conversationId == 2) {
-                        messagesHtml = `
-                            <div class="message received">
-                                <div class="message-text">
-                                    Bonjour ! Profitez de notre offre spéciale été : -30% sur tous les vols vers l'Europe jusqu'au 31 août.
-                                </div>
-                                <div class="message-time">Hier</div>
-                            </div>
-                        `;
-                    }
-                    
-                    $('#messagesArea').html(messagesHtml);
-                    $('#messagesArea').scrollTop($('#messagesArea')[0].scrollHeight);
-                }, 500);
-            }
-            
-            // Ajustement automatique de la hauteur du textarea
-            $('.message-input').on('input', function() {
-                this.style.height = 'auto';
-                this.style.height = (this.scrollHeight) + 'px';
-            });
         });
+
+        function loadEmail(emailId) {
+            // Mettre à jour la sélection visuelle
+            $('.email-item').removeClass('active');
+            $(`.email-item[data-email-id="${emailId}"]`).addClass('active');
+            
+            // En production, vous feriez un appel AJAX pour charger l'email complet
+            // Pour l'instant, on simule le chargement
+            console.log('Chargement de l\'email ID: ' + emailId);
+            
+            // Ici vous feriez un appel AJAX pour récupérer l'email
+            // $.ajax({
+            //     url: 'get_email.php',
+            //     method: 'POST',
+            //     data: { email_id: emailId },
+            //     success: function(response) {
+            //         // Mettre à jour l'interface avec les données de l'email
+            //     }
+            // });
+        }
+
+        function replyToEmail() {
+            const activeEmail = $('.email-item.active');
+            const subject = activeEmail.find('.email-subject').text();
+            alert('Répondre à: ' + subject);
+            // Ouvrir un formulaire de réponse
+        }
+
+        function forwardEmail() {
+            const activeEmail = $('.email-item.active');
+            const subject = activeEmail.find('.email-subject').text();
+            alert('Transférer: ' + subject);
+            // Ouvrir un formulaire de transfert
+        }
+
+        function printEmail() {
+            window.print();
+        }
+
+        function deleteEmail() {
+            const activeEmail = $('.email-item.active');
+            const emailId = activeEmail.data('email-id');
+            
+            if (confirm('Êtes-vous sûr de vouloir supprimer ce message ?')) {
+                // En production, vous feriez un appel AJAX pour supprimer l'email
+                console.log('Suppression de l\'email ID: ' + emailId);
+                
+                // Simulation de suppression
+                activeEmail.fadeOut(300, function() {
+                    $(this).remove();
+                    // Si plus d'emails, afficher l'état vide
+                    if ($('.email-item').length === 0) {
+                        $('.email-reader').html(`
+                            <div class="empty-state">
+                                <i class="fas fa-envelope-open"></i>
+                                <h3>Aucun message sélectionné</h3>
+                                <p>Sélectionnez un message dans la liste pour le lire.</p>
+                            </div>
+                        `);
+                    }
+                });
+            }
+        }
     </script>
 </body>
 </html>
