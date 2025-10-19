@@ -468,6 +468,37 @@
         </div>
     </header>
 
+    <!-- Bannière avec carousel -->
+    <div class="main-banner-container">
+        <div class="main-banner owl-carousel owl-theme">
+            <div class="item banner-1">
+                <div class="header-text">
+                    <h2>Bienvenu sur votre compte</h2>
+                </div>
+            </div>
+            <div class="item banner-2">
+                <div class="header-text">
+                    <h2>Accédez à vos réservations</h2>
+                </div>
+            </div>
+            <div class="item banner-3">
+                <div class="header-text">
+                    <h2>Gérez vos voyages</h2>
+                </div>
+            </div>
+            <div class="item banner-4">
+                <div class="header-text">
+                    <h2>Voyagez en toute sérénité</h2>
+                </div>
+            </div>
+            <div class="item banner-5">
+                <div class="header-text">
+                    <h2>Retrouvez vos avantages</h2>
+                </div>
+            </div>
+        </div>
+    </div> <!-- Fermeture correcte de la div main-banner-container -->
+        
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
@@ -485,13 +516,13 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="../reservation.php">
+                            <a class="nav-link" href="mes_reservations.php">
                                 <i class="fas fa-plane-departure me-2"></i>
                                 Mes réservations
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="../paiement.php">
+                            <a class="nav-link" href="mes_paiements.php">
                                 <i class="fas fa-credit-card me-2"></i>
                                 Mes paiements
                             </a>
@@ -715,6 +746,17 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         $(document).ready(function() {
+            $(".owl-carousel").owlCarousel({
+                items: 1,
+                loop: true,
+                autoplay: true,
+                autoplayTimeout: 5000,
+                autoplayHoverPause: true,
+                nav: true,
+                dots: true,
+                animateOut: 'fadeOut',
+                animateIn: 'fadeIn'
+            });
             // Gestion de la sélection des conversations
             $('.conversation-item').on('click', function() {
                 $('.conversation-item').removeClass('active');
