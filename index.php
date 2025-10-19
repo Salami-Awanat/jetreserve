@@ -167,31 +167,52 @@ $vols_populaires = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="offers-grid">
                 <?php foreach ($vols_populaires as $vol): ?>
                 <!-- Offer Card -->
-                <div class="card">
-                    <div class="card-badge"><?php echo htmlspecialchars($vol['classe']); ?></div>
-                    <div style="height: 200px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem;">
-                        <i class="fas fa-plane"></i>
-                    </div>
-                    <div class="card-content">
-                        <h3><?php echo htmlspecialchars($vol['depart']); ?> → <?php echo htmlspecialchars($vol['arrivee']); ?></h3>
-                        <p><?php echo htmlspecialchars($vol['nom_compagnie']); ?> - Vol <?php echo htmlspecialchars($vol['code_compagnie'] . $vol['numero_vol']); ?></p>
-                        <p>Départ: <?php echo date('d M Y, H:i', strtotime($vol['date_depart'])); ?></p>
-                        <div class="price">À partir de <?php echo number_format($vol['prix'], 2, ',', ' '); ?>€</div>
-                        
-                        <!-- Modification ici : Lien vers la page de détails du vol -->
-                        <?php if (isset($_SESSION['id_user'])): ?>
-                            <!-- Si connecté : lien vers les détails du vol -->
-                            <a href="vol_details.php?id_vol=<?php echo $vol['id_vol']; ?>" class="btn btn-primary btn-sm">
-                                <i class="fas fa-eye"></i> Voir les détails
-                            </a>
-                        <?php else: ?>
-                            <!-- Si non connecté : lien vers la connexion avec redirection -->
-                            <a href="vge64/connexion.php?redirect=vol_details&id_vol=<?php echo $vol['id_vol']; ?>" class="btn btn-primary btn-sm">
-                                <i class="fas fa-eye"></i> Voir les détails
-                            </a>
-                        <?php endif; ?>
-                    </div>
-                </div>
+      <div class="card">
+    <div class="card-badge"><?php echo htmlspecialchars($vol['classe']); ?></div>
+    <div style="height: 200px; overflow: hidden;">
+        <?php
+        // Déterminer l'image en fonction des villes
+        $depart = $vol['depart'];
+        $arrivee = $vol['arrivee'];
+        
+        if ($depart == 'Paris' && $arrivee == 'Abidjan') {
+            $image_file = 'paris.jpg';
+        } elseif ($depart == 'Dubai' && $arrivee == 'Abidjan') {
+            $image_file = 'dubai.jpg';
+        } elseif ($depart == 'Istanbul' && $arrivee == 'Paris') {
+            $image_file = 'inde.jpg';
+        } else {
+            $image_file = 'madere.jpg'; // Image par défaut
+        }
+        
+        $image_path = "images/" . $image_file;
+        
+        if (file_exists($image_path)) {
+            echo '<img src="' . $image_path . '" alt="' . htmlspecialchars($depart . ' → ' . $arrivee) . '" style="width: 100%; height: 100%; object-fit: cover;">';
+        } else {
+            echo '<div style="height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem;">';
+            echo '<i class="fas fa-plane"></i>';
+            echo '</div>';
+        }
+        ?>
+    </div>
+    <div class="card-content">
+        <h3><?php echo htmlspecialchars($vol['depart']); ?> → <?php echo htmlspecialchars($vol['arrivee']); ?></h3>
+        <p><?php echo htmlspecialchars($vol['nom_compagnie']); ?> - Vol <?php echo htmlspecialchars($vol['code_compagnie'] . $vol['numero_vol']); ?></p>
+        <p>Départ: <?php echo date('d M Y, H:i', strtotime($vol['date_depart'])); ?></p>
+        <div class="price">À partir de <?php echo number_format($vol['prix'], 2, ',', ' '); ?>€</div>
+        
+        <?php if (isset($_SESSION['id_user'])): ?>
+            <a href="vol_details.php?id_vol=<?php echo $vol['id_vol']; ?>" class="btn btn-primary btn-sm">
+                <i class="fas fa-eye"></i> Voir les détails
+            </a>
+        <?php else: ?>
+            <a href="vge64/connexion.php?redirect=vol_details&id_vol=<?php echo $vol['id_vol']; ?>" class="btn btn-primary btn-sm">
+                <i class="fas fa-eye"></i> Voir les détails
+            </a>
+        <?php endif; ?>
+    </div>
+</div>
                 <?php endforeach; ?>
             </div>
         </section>
