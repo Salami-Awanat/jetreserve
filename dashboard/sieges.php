@@ -192,6 +192,7 @@ if (isset($_GET['delete_siege'])) {
 include 'includes/header.php';
 ?>
 
+
 <div class="content">
     <!-- Message de notification -->
     <?php if ($message): ?>
