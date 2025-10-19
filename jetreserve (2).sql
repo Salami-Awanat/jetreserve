@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3306
--- Généré le : ven. 17 oct. 2025 à 20:34
+-- Généré le : dim. 19 oct. 2025 à 18:02
 -- Version du serveur : 5.7.40
 -- Version de PHP : 8.0.26
 
@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS `compagnies` (
   `id_compagnie` int(11) NOT NULL AUTO_INCREMENT,
   `nom_compagnie` varchar(100) NOT NULL,
   `code_compagnie` varchar(10) NOT NULL,
+  `pays` varchar(100) NOT NULL,
   PRIMARY KEY (`id_compagnie`),
   UNIQUE KEY `code_compagnie` (`code_compagnie`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
@@ -67,10 +68,10 @@ CREATE TABLE IF NOT EXISTS `compagnies` (
 -- Déchargement des données de la table `compagnies`
 --
 
-INSERT INTO `compagnies` (`id_compagnie`, `nom_compagnie`, `code_compagnie`) VALUES
-(1, 'Air France', 'AF'),
-(2, 'Emirates', 'EK'),
-(3, 'Turkish Airlines', 'TK');
+INSERT INTO `compagnies` (`id_compagnie`, `nom_compagnie`, `code_compagnie`, `pays`) VALUES
+(1, 'Air France', 'AF', 'France'),
+(2, 'Emirates', 'EK', 'Emirate'),
+(3, 'Turkish Airlines', 'TK', 'Turquie');
 
 -- --------------------------------------------------------
 
@@ -405,7 +406,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `date_creation` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_user`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=latin1;
 
 --
 -- Déchargement des données de la table `users`
@@ -417,7 +418,9 @@ INSERT INTO `users` (`id_user`, `nom`, `prenom`, `email`, `telephone`, `password
 (3, 'Radji', 'Sad', 'admin@test.com', '0700000000', 'adminpass2003', 'admin', 'actif', '2025-10-07 22:26:46'),
 (4, 'Agbalessi', 'Ruth', 'agbalessifloriane69@gmail.com', '0100000202', '1234567', 'admin', 'actif', '2025-10-11 04:45:37'),
 (5, 'Degny', 'Alfred', 'alfred@gmail.com', '0102030407', '1234567', 'client', 'actif', '2025-10-11 05:12:38'),
-(6, 'Kouamé', 'Mélina', 'mel@gmail.com', NULL, '1234567', 'client', 'actif', '2025-10-11 05:22:34');
+(6, 'Kouamé', 'Mélina', 'mel@gmail.com', NULL, '1234567', 'client', 'actif', '2025-10-11 05:22:34'),
+(7, 'Admin', 'System', 'admin@jetreserve.com', NULL, 'admin123', 'admin', 'actif', '2025-10-17 23:48:33'),
+(8, 'Banga', 'Christ', 'awanatsalami@gmail.com', NULL, '$2y$10$59yObNnnMOfLmgGrmPZxAuFmcBFwCD2g8QDzJ7GMj63pHThiLCeCa', 'client', 'actif', '2025-10-19 16:47:52');
 
 -- --------------------------------------------------------
 
