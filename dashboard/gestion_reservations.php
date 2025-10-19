@@ -1,5 +1,65 @@
 <?php include 'includes/header.php'; ?>
 
+<?php
+// Fonction pour envoyer un email de confirmation
+function envoyerEmailConfirmation($pdo, $reservation_id) {
+    try {
+        // Récupérer les détails de la réservation
+        $stmt = $pdo->prepare("
+            SELECT r.*, v.depart, v.arrivee, v.date_depart, v.date_arrivee, 
+                   v.numero_vol, c.nom_compagnie, c.code_compagnie,
+                   u.prenom, u.nom, u.email
+            FROM reservations r
+            JOIN vols v ON r.id_vol = v.id_vol
+            JOIN compagnies c ON v.id_compagnie = c.id_compagnie
+            JOIN users u ON r.id_user = u.id_user
+            WHERE r.id_reservation = ?
+        ");
+        $stmt->execute([$reservation_id]);
+        $reservation = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($reservation) {
+            // Créer le contenu de l'email
+            $sujet = "Confirmation de votre réservation #" . $reservation['id_reservation'];
+            $contenu = "
+Bonjour " . $reservation['prenom'] . ",
+
+Nous sommes ravis de vous confirmer que votre réservation a été validée !
+
+Détails de votre vol :
+• Réservation : #" . $reservation['id_reservation'] . "
+• Vol : " . $reservation['depart'] . " → " . $reservation['arrivee'] . "
+• Compagnie : " . $reservation['nom_compagnie'] . " (" . $reservation['code_compagnie'] . $reservation['numero_vol'] . ")
+• Date de départ : " . date('d/m/Y à H:i', strtotime($reservation['date_depart'])) . "
+• Date d'arrivée : " . date('d/m/Y à H:i', strtotime($reservation['date_arrivee'])) . "
+• Passagers : " . $reservation['nombre_passagers'] . "
+• Prix total : " . number_format($reservation['prix_total'], 2, ',', ' ') . " €
+
+Votre billet électronique est disponible dans votre espace client.
+Vous pouvez le télécharger à tout moment.
+
+Nous vous souhaitons un excellent voyage !
+
+Cordialement,
+L'équipe JetReserve
+
+Service client : +33 1 23 45 67 89
+contact@jetreserve.com
+            ";
+            
+            // Enregistrer l'email dans la base de données
+            $stmt = $pdo->prepare("INSERT INTO emails (id_user, sujet, contenu, type, statut) VALUES (?, ?, ?, 'confirmation', 'envoyé')");
+            $stmt->execute([$reservation['id_user'], $sujet, $contenu]);
+            
+            return true;
+        }
+    } catch (PDOException $e) {
+        error_log("Erreur envoi email confirmation: " . $e->getMessage());
+        return false;
+    }
+}
+?>
+
 <div class="admin-container">
     <?php include 'includes/sidebar.php'; ?>
     
@@ -13,11 +73,23 @@
         // Traitement du changement de statut
         if (isset($_POST['changer_statut'])) {
             try {
-                $stmt = $pdo->prepare("UPDATE reservations SET statut = ? WHERE id_reservation = ?");
-                $stmt->execute([$_POST['nouveau_statut'], $_POST['id_reservation']]);
+                $nouveau_statut = $_POST['nouveau_statut'];
+                $id_reservation = $_POST['id_reservation'];
                 
-                // Envoyer un email de notification (simulé)
-                $message = "Statut de la réservation #" . $_POST['id_reservation'] . " changé en: " . $_POST['nouveau_statut'];
+                $stmt = $pdo->prepare("UPDATE reservations SET statut = ? WHERE id_reservation = ?");
+                $stmt->execute([$nouveau_statut, $id_reservation]);
+                
+                // Envoyer un email de confirmation si le statut passe à "confirmé"
+                if ($nouveau_statut === 'confirmé') {
+                    if (envoyerEmailConfirmation($pdo, $id_reservation)) {
+                        $message = "Statut de la réservation #" . $id_reservation . " changé en: " . $nouveau_statut . " - Email de confirmation envoyé au client";
+                    } else {
+                        $message = "Statut de la réservation #" . $id_reservation . " changé en: " . $nouveau_statut . " - Erreur lors de l'envoi de l'email";
+                    }
+                } else {
+                    $message = "Statut de la réservation #" . $id_reservation . " changé en: " . $nouveau_statut;
+                }
+                
                 echo '<div style="background: var(--success); color: white; padding: 10px; border-radius: 4px; margin-bottom: 20px;">' . $message . '</div>';
             } catch (PDOException $e) {
                 echo '<div style="background: var(--danger); color: white; padding: 10px; border-radius: 4px; margin-bottom: 20px;">Erreur: ' . $e->getMessage() . '</div>';
@@ -78,7 +150,7 @@
                                 <div>
                                     <h4>Statut et paiement</h4>
                                     <p><strong>Statut:</strong> 
-                                        <span class="badge badge-<?php echo $reservation['statut'] == 'confirmé' ? 'success' : 'warning'; ?>">
+                                        <span class="badge badge-<?php echo $reservation['statut'] == 'confirmé' ? 'success' : ($reservation['statut'] == 'en attente' ? 'warning' : 'danger'); ?>">
                                             <?php echo ucfirst($reservation['statut']); ?>
                                         </span>
                                     </p>
