@@ -3,8 +3,8 @@ require_once '../includes/connexion.php';
 
 // Récupération des messages (emails)
 $stmt = $bdd->query("SELECT e.*, u.nom, u.prenom, u.email 
-                     FROM " . TABLE_EMAILS . " e
-                     JOIN " . TABLE_USERS . " u ON e.id_user = u.id_user
+                     FROM " . $emails . " e
+                     JOIN " . $users . " u ON e.id_user = u.id_user
                      ORDER BY e.date_envoi DESC");
 $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -15,7 +15,7 @@ if (isset($_POST['send_message'])) {
     $contenu = $_POST['contenu'];
     $type = $_POST['type'];
     
-    $stmt = $bdd->prepare("INSERT INTO " . TABLE_EMAILS . " (id_user, sujet, contenu, type) 
+    $stmt = $bdd->prepare("INSERT INTO " . $emails . " (id_user, sujet, contenu, type) 
                           VALUES (:id_user, :sujet, :contenu, :type)");
     $stmt->bindParam(':id_user', $id_user, PDO::PARAM_INT);
     $stmt->bindParam(':sujet', $sujet, PDO::PARAM_STR);
