@@ -13,17 +13,19 @@ $message = '';
 $message_type = '';
 
 // Ajouter un avion
+
+
+// Modifier un avion
 if (isset($_POST['add_avion'])) {
     $modele = trim($_POST['modele']);
-    $capacite = intval($_POST['capacite']);
-    $vitesse_croisiere = intval($_POST['vitesse_croisiere']);
-    $autonomie = intval($_POST['autonomie']);
-    $description = trim($_POST['description']);
-    
+    $id_compagnie = intval($_POST['id_compagnie']);
+    $capacite_total = intval($_POST['capacite_total']);
+    $configuration = $_POST['configuration_sieges'] ? json_encode($_POST['configuration_sieges']) : null;
+
     try {
-        $stmt = $pdo->prepare("INSERT INTO avions (modele, capacite, vitesse_croisiere, autonomie, description) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$modele, $capacite, $vitesse_croisiere, $autonomie, $description]);
-        
+        $stmt = $pdo->prepare("INSERT INTO avions (modele, id_compagnie, capacite_total, configuration_sieges) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$modele, $id_compagnie, $capacite_total, $configuration]);
+
         $message = "Avion ajouté avec succès.";
         $message_type = 'success';
     } catch (PDOException $e) {
@@ -31,28 +33,6 @@ if (isset($_POST['add_avion'])) {
         $message_type = 'error';
     }
 }
-
-// Modifier un avion
-if (isset($_POST['edit_avion'])) {
-    $avion_id = intval($_POST['avion_id']);
-    $modele = trim($_POST['modele']);
-    $capacite = intval($_POST['capacite']);
-    $vitesse_croisiere = intval($_POST['vitesse_croisiere']);
-    $autonomie = intval($_POST['autonomie']);
-    $description = trim($_POST['description']);
-    
-    try {
-        $stmt = $pdo->prepare("UPDATE avions SET modele = ?, capacite = ?, vitesse_croisiere = ?, autonomie = ?, description = ? WHERE id_avion = ?");
-        $stmt->execute([$modele, $capacite, $vitesse_croisiere, $autonomie, $description, $avion_id]);
-        
-        $message = "Avion modifié avec succès.";
-        $message_type = 'success';
-    } catch (PDOException $e) {
-        $message = "Erreur lors de la modification: " . $e->getMessage();
-        $message_type = 'error';
-    }
-}
-
 // Supprimer un avion
 if (isset($_GET['delete'])) {
     $avion_id = intval($_GET['delete']);
@@ -139,28 +119,25 @@ include 'includes/header.php';
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="capacite">Capacité (sièges) *</label>
-                        <input type="number" class="form-control" id="capacite" name="capacite" 
-                               value="<?php echo $avion_to_edit ? $avion_to_edit['capacite'] : ''; ?>" required min="1" max="1000">
+                        <input type="number" class="form-control" id="capacite_total" name="capacite_total" 
+                               value="<?php echo $avion_to_edit ? $avion_to_edit['capacite_total'] : ''; ?>" required min="1" max="1000">
                     </div>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label" for="vitesse_croisiere">Vitesse de croisière (km/h)</label>
-                        <input type="number" class="form-control" id="vitesse_croisiere" name="vitesse_croisiere" 
-                               value="<?php echo $avion_to_edit ? $avion_to_edit['vitesse_croisiere'] : ''; ?>" min="0">
+                        <label class="form-label" for="configuration_sieges">configuration des sieges(km/h)</label>
+                        <input type="number" class="form-control" id="configuration_sieges" name="configuration_sieges" 
+                               value="<?php echo $avion_to_edit ? $avion_to_edit['configuration_sieges'] : ''; ?>" min="0">
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="autonomie">Autonomie (km)</label>
-                        <input type="number" class="form-control" id="autonomie" name="autonomie" 
-                               value="<?php echo $avion_to_edit ? $avion_to_edit['autonomie'] : ''; ?>" min="0">
+                        <label class="form-label" for="created_at">crée à (heure)</label>
+                        <input type="number" class="form-control" id="created_at" name="created_at" 
+                               value="<?php echo $avion_to_edit ? $avion_to_edit['created_at'] : ''; ?>" min="0">
                     </div>
                 </div>
                 
-                <div class="form-group">
-                    <label class="form-label" for="description">Description</label>
-                    <textarea class="form-control" id="description" name="description" rows="4"><?php echo $avion_to_edit ? htmlspecialchars($avion_to_edit['description']) : ''; ?></textarea>
-                </div>
+             
                 
                 <div class="form-actions">
                     <?php if ($avion_to_edit): ?>
@@ -191,11 +168,10 @@ include 'includes/header.php';
                 <table class="table" id="avionsTable">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Modèle</th>
-                            <th>Capacité</th>
+                            <th>Modèles</th>
+                            <th>Capacités</th>
                             <th>Vitesse</th>
-                            <th>Autonomie</th>
+                            <th>Dates</th>
                             <th>Vols</th>
                             <th>Sièges</th>
                             <th>Actions</th>
@@ -204,32 +180,35 @@ include 'includes/header.php';
                     <tbody>
                         <?php foreach ($avions as $avion): ?>
                         <tr>
-                            <td><?php echo $avion['id_avion']; ?></td>
                             <td>
-                                <strong><?php echo htmlspecialchars($avion['modele']); ?></strong>
-                                <?php if ($avion['description']): ?>
-                                <div style="color: #64748b; font-size: 0.8rem;">
-                                    <?php echo strlen($avion['description']) > 50 ? substr($avion['description'], 0, 50) . '...' : $avion['description']; ?>
-                                </div>
-                                <?php endif; ?>
+                                <span class="text-success"><?php echo $avion['modele']; ?> sièges</span>
+                                  
                             </td>
                             <td>
-                                <span class="text-success"><?php echo $avion['capacite']; ?> sièges</span>
+                                <span class="text-success"><?php echo $avion['capacite_total']; ?> sièges</span>
                             </td>
+                            
                             <td>
-                                <?php if ($avion['vitesse_croisiere']): ?>
-                                <?php echo number_format($avion['vitesse_croisiere'], 0, ',', ' '); ?> km/h
-                                <?php else: ?>
-                                <span style="color: #94a3b8;">-</span>
-                                <?php endif; ?>
+                              <?php if (!empty($avion['configuration_sieges'])): ?>
+                              <?php 
+                              $config = json_decode($avion['configuration_sieges'], true);
+                              if (is_array($config)) {
+                               echo "<strong>1ère :</strong> " . ($config['premiere'] ?? 0);
+                               echo " | <strong>Affaires :</strong> " . ($config['affaires'] ?? 0);
+                               echo " | <strong>Éco :</strong> " . ($config['economique'] ?? 0);
+                             } else {
+                                echo "<span style='color:#94a3b8;'>Format invalide</span>";
+                              }
+                                ?>
+                               <?php else: ?>
+                              <span style="color:#94a3b8;">-</span>
+                              <?php endif; ?>
                             </td>
+
                             <td>
-                                <?php if ($avion['autonomie']): ?>
-                                <?php echo number_format($avion['autonomie'], 0, ',', ' '); ?> km
-                                <?php else: ?>
-                                <span style="color: #94a3b8;">-</span>
-                                <?php endif; ?>
+                                <span class="text-success"><?php echo $avion['created_at']; ?> sièges</span>
                             </td>
+
                             <td>
                                 <span class="<?php echo $avion['vols_count'] == 0 ? 'text-warning' : 'text-success'; ?>">
                                     <?php echo $avion['vols_count']; ?> vol(s)
