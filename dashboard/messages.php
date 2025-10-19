@@ -257,6 +257,14 @@
             margin: 10px 0;
         }
         
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-family: 'Poppins', sans-serif;
+        }
+        
         @media (max-width: 768px) {
             .admin-container {
                 flex-direction: column;
