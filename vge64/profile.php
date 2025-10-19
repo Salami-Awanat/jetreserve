@@ -10,352 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style1.css">
-    <style>
-        /* ===== STYLES POUR LA PAGE DE PROFIL ===== */
-
-/* Container du profil */
-.profile-container {
-    background: var(--white);
-    border-radius: 15px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    overflow: hidden;
-    margin: 2rem 0;
-    border: 1px solid var(--border-color);
-}
-
-/* En-tête du profil */
-.profile-header {
-    padding: 2rem;
-    background: linear-gradient(135deg, var(--primary), var(--info));
-    color: var(--white);
-    text-align: center;
-}
-
-.profile-avatar {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 1rem;
-    border: 4px solid var(--white);
-    font-size: 3rem;
-    color: var(--white);
-}
-
-.profile-name {
-    font-size: 1.8rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-}
-
-.profile-email {
-    opacity: 0.9;
-    margin-bottom: 1rem;
-    font-size: 1.1rem;
-}
-
-.profile-badge {
-    display: inline-block;
-    background: rgba(255,255,255,0.2);
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: 500;
-}
-
-/* Contenu du profil */
-.profile-content {
-    padding: 2rem;
-}
-
-.section-title {
-    font-size: 1.3rem;
-    font-weight: 600;
-    margin-bottom: 1.5rem;
-    color: var(--dark);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid var(--border-color);
-}
-
-.section-title i {
-    color: var(--info);
-}
-
-/* Grille du formulaire */
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.form-group {
-    margin-bottom: 1.5rem;
-}
-
-.form-group.full-width {
-    grid-column: 1 / -1;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: var(--dark);
-}
-
-.form-control {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    font-family: 'Poppins', sans-serif;
-    transition: all 0.3s ease;
-    background: var(--light-gray);
-}
-
-.form-control:focus {
-    outline: none;
-    border-color: var(--info);
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-    background: var(--white);
-}
-
-.input-with-icon {
-    position: relative;
-}
-
-.input-with-icon i {
-    position: absolute;
-    right: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--gray);
-}
-
-/* Grille des préférences */
-.preferences-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.preference-card {
-    background: var(--light-gray);
-    padding: 1.5rem;
-    border-radius: 10px;
-    border: 1px solid var(--border-color);
-    transition: all 0.3s ease;
-}
-
-.preference-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-.preference-card h4 {
-    margin-bottom: 1rem;
-    color: var(--dark);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 1.1rem;
-}
-
-.preference-card h4 i {
-    color: var(--info);
-}
-
-.checkbox-group {
-    display: flex;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.checkbox-group input {
-    margin-right: 0.75rem;
-    width: 18px;
-    height: 18px;
-    accent-color: var(--info);
-}
-
-.checkbox-group label {
-    margin: 0;
-    font-weight: normal;
-    color: var(--dark);
-    cursor: pointer;
-}
-
-/* Grille des statistiques */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.stat-card {
-    background: var(--white);
-    padding: 1.5rem;
-    border-radius: 10px;
-    border: 1px solid var(--border-color);
-    text-align: center;
-    transition: all 0.3s ease;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-}
-
-.stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-}
-
-.stat-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: var(--info);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 1rem;
-    color: var(--white);
-    font-size: 1.2rem;
-}
-
-.stat-number {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--dark);
-    margin-bottom: 0.5rem;
-}
-
-.stat-label {
-    color: var(--gray);
-    font-size: 0.9rem;
-}
-
-/* Boutons d'action */
-.action-buttons {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-    margin-top: 2rem;
-    padding-top: 2rem;
-    border-top: 1px solid var(--border-color);
-}
-
-/* Modal */
-.modal-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-overlay.active {
-    display: flex;
-}
-
-.modal {
-    background: var(--white);
-    border-radius: 15px;
-    padding: 2rem;
-    max-width: 500px;
-    width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.modal-title {
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: var(--dark);
-    margin: 0;
-}
-
-.modal-close {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: var(--gray);
-    transition: color 0.3s ease;
-}
-
-.modal-close:hover {
-    color: var(--danger);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
     
-    .preferences-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .action-buttons {
-        flex-direction: column;
-    }
-    
-    .profile-header {
-        padding: 1.5rem;
-    }
-    
-    .profile-avatar {
-        width: 100px;
-        height: 100px;
-        font-size: 2.5rem;
-    }
-    
-    .profile-name {
-        font-size: 1.5rem;
-    }
-}
 
-@media (max-width: 480px) {
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .profile-content {
-        padding: 1.5rem;
-    }
-    
-    .modal {
-        padding: 1.5rem;
-    }
-}
-    </style>
 </head>
 <body>
     <!-- Header -->
@@ -395,6 +51,38 @@
             </nav>
         </div>
     </header>
+    
+    <!-- Bannière avec carousel -->
+    <div class="main-banner-container">
+        <div class="main-banner owl-carousel owl-theme">
+            <div class="item banner-1">
+                <div class="header-text">
+                    <h2>Bienvenu sur votre compte</h2>
+                </div>
+            </div>
+            <div class="item banner-2">
+                <div class="header-text">
+                    <h2>Accédez à vos réservations</h2>
+                </div>
+            </div>
+            <div class="item banner-3">
+                <div class="header-text">
+                    <h2>Gérez vos voyages</h2>
+                </div>
+            </div>
+            <div class="item banner-4">
+                <div class="header-text">
+                    <h2>Voyagez en toute sérénité</h2>
+                </div>
+            </div>
+            <div class="item banner-5">
+                <div class="header-text">
+                    <h2>Retrouvez vos avantages</h2>
+                </div>
+            </div>
+        </div>
+    </div> <!-- Fermeture correcte de la div main-banner-container -->
+        
 
     <div class="container-fluid">
         <div class="row">
@@ -413,13 +101,13 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="../reservation.php">
+                            <a class="nav-link" href="mes_reservations.php">
                                 <i class="fas fa-plane-departure me-2"></i>
                                 Mes réservations
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="../paiement.php">
+                            <a class="nav-link" href="mes_paiement.php">
                                 <i class="fas fa-credit-card me-2"></i>
                                 Mes paiements
                             </a>
@@ -445,6 +133,7 @@
                     </ul>
                 </div>
             </nav>
+
 
             <!-- Main Content -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
@@ -725,6 +414,18 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         $(document).ready(function() {
+
+              $(".owl-carousel").owlCarousel({
+                items: 1,
+                loop: true,
+                autoplay: true,
+                autoplayTimeout: 5000,
+                autoplayHoverPause: true,
+                nav: true,
+                dots: true,
+                animateOut: 'fadeOut',
+                animateIn: 'fadeIn'
+            });
             // Gestion du modal de changement de mot de passe
             $('#changePasswordBtn').on('click', function() {
                 $('#passwordModal').addClass('active');
