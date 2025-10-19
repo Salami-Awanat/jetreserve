@@ -6,19 +6,38 @@ if (isset($_POST['inscrire'])) {
     $nom = trim($_POST['nom']);
     $prenom = trim($_POST['prenom']);
     $email = trim($_POST['email']);
-    $mdp = $_POST['password']; // champ HTML
+    $mdp = $_POST['password'];
+    $confirm_password = $_POST['confirm_password'];
 
-    // Vérifie si l'email existe déjà
-    $verif = $bdd->prepare("SELECT * FROM users WHERE email = ?");
-    $verif->execute([$email]);
-
-    if ($verif->rowCount() > 0) {
-        $message = "⚠️ Cet email est déjà utilisé.";
+    // Vérification des champs
+    if (empty($nom) || empty($prenom) || empty($email) || empty($mdp)) {
+        $message = "⚠️ Tous les champs sont obligatoires.";
+    } elseif ($mdp !== $confirm_password) {
+        $message = "⚠️ Les mots de passe ne correspondent pas.";
+    } elseif (strlen($mdp) < 8) {
+        $message = "⚠️ Le mot de passe doit contenir au moins 8 caractères.";
     } else {
-        // ⚠️ changer "mdp" en "password"
-        $insert = $bdd->prepare("INSERT INTO users (nom, prenom, email, password, statut) VALUES (?, ?, ?, ?, 'actif')");
-        $insert->execute([$nom, $prenom, $email, $mdp]);
-        $message = "✅ Inscription réussie ! Vous pouvez maintenant vous connecter.";
+        // Vérifie si l'email existe déjà
+        try {
+            // CORRECTION : Utilisation de $pdo
+            $verif = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+            $verif->execute([$email]);
+
+            if ($verif->rowCount() > 0) {
+                $message = "⚠️ Cet email est déjà utilisé.";
+            } else {
+                // Hachage du mot de passe
+                $mdp_hash = password_hash($mdp, PASSWORD_DEFAULT);
+                
+                // Insertion avec le mot de passe haché
+                $insert = $pdo->prepare("INSERT INTO users (nom, prenom, email, password, statut) VALUES (?, ?, ?, ?, 'actif')");
+                $insert->execute([$nom, $prenom, $email, $mdp_hash]);
+                
+                $message = "✅ Inscription réussie ! Vous pouvez maintenant vous connecter.";
+            }
+        } catch (PDOException $e) {
+            $message = "⚠️ Erreur lors de l'inscription : " . $e->getMessage();
+        }
     }
 }
 ?>
@@ -111,7 +130,7 @@ if (isset($_POST['inscrire'])) {
                             <span class="input-group-text">
                                 <i class="fas fa-user"></i>
                             </span>
-                            <input type="text" id="nom" name="nom" placeholder="Votre nom" required>
+                            <input type="text" id="nom" name="nom" placeholder="Votre nom" value="<?php echo isset($_POST['nom']) ? htmlspecialchars($_POST['nom']) : ''; ?>" required>
                         </div>
                     </div>
 
@@ -121,7 +140,7 @@ if (isset($_POST['inscrire'])) {
                             <span class="input-group-text">
                                 <i class="fas fa-user"></i>
                             </span>
-                            <input type="text" id="prenom" name="prenom" placeholder="Votre prénom" required>
+                            <input type="text" id="prenom" name="prenom" placeholder="Votre prénom" value="<?php echo isset($_POST['prenom']) ? htmlspecialchars($_POST['prenom']) : ''; ?>" required>
                         </div>
                     </div>
                 </div>
@@ -132,7 +151,7 @@ if (isset($_POST['inscrire'])) {
                         <span class="input-group-text">
                             <i class="fas fa-envelope"></i>
                         </span>
-                        <input type="email" id="email" name="email" placeholder="exemple@email.com" required>
+                        <input type="email" id="email" name="email" placeholder="exemple@email.com" value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" required>
                     </div>
                 </div>
 
@@ -158,7 +177,7 @@ if (isset($_POST['inscrire'])) {
                 </div>
 
                 <div class="mb-4 form-check">
-                    <input type="checkbox" id="terms" required>
+                    <input type="checkbox" id="terms" name="terms" required>
                     <label for="terms">J'accepte les <a href="#">conditions d'utilisation</a> et la <a href="#">politique de confidentialité</a></label>
                 </div>
 
@@ -240,6 +259,18 @@ if (isset($_POST['inscrire'])) {
                 dots: true,
                 animateOut: 'fadeOut',
                 animateIn: 'fadeIn'
+            });
+
+            // Validation des mots de passe en temps réel
+            $('#password, #confirm_password').on('keyup', function() {
+                const password = $('#password').val();
+                const confirmPassword = $('#confirm_password').val();
+                
+                if (password !== confirmPassword && confirmPassword !== '') {
+                    $('#confirm_password').css('border-color', '#dc3545');
+                } else {
+                    $('#confirm_password').css('border-color', '#28a745');
+                }
             });
         });
     </script>
