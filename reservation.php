@@ -111,9 +111,14 @@ try {
 $erreur = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
     
+    echo "<div style='background: purple; color: white; padding: 20px; margin: 20px;'>FORMULAIRE REÇU PAR LE SERVEUR !</div>";
+    
     $nombre_passagers = intval($_POST['nombre_passagers']);
     $sieges_selectionnes = isset($_POST['sieges']) ? array_map('intval', $_POST['sieges']) : [];
     $bagages_selectionnes = isset($_POST['bagages']) ? $_POST['bagages'] : [];
+    
+    echo "<div style='background: cyan; color: black; padding: 20px; margin: 20px;'>Données: Passagers=$nombre_passagers, Sièges=" . count($sieges_selectionnes) . "</div>";
+    
     
     // Validation
     $erreurs = [];
@@ -122,8 +127,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
         $erreurs[] = "Nombre de passagers invalide";
     }
     
-    if (count($sieges_selectionnes) !== $nombre_passagers) {
-        $erreurs[] = "Vous devez sélectionner exactement " . $nombre_passagers . " siège(s)";
+    if (count($sieges_selectionnes) === 0) {
+        $erreurs[] = "Vous devez sélectionner au moins un siège";
     }
     
     // Vérification rapide de la disponibilité des sièges
@@ -140,6 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
             $pdo->beginTransaction();
             
             error_log("=== DÉBUT RÉSERVATION ===");
+            echo "<div style='background: green; color: white; padding: 20px; margin: 20px;'>DÉBUT RÉSERVATION - Pas d'erreurs de validation</div>";
             
             // CALCUL RAPIDE DU PRIX
             $prix_total = $vol['prix'] * $nombre_passagers;
@@ -263,6 +269,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
             $pdo->commit();
             
             error_log("=== RÉSERVATION RÉUSSIE ===");
+            echo "<div style='background: blue; color: white; padding: 20px; margin: 20px;'>RÉSERVATION RÉUSSIE - ID: $id_reservation</div>";
             
             // VIDER LE BUFFER ET REDIRIGER PROPREMENT
             while (ob_get_level() > 0) {
@@ -270,7 +277,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
             }
             
             // Rediriger vers la page de confirmation
-            header('Location: paiement.php?id_reservation=' . $id_reservation);
+            header('Location: confirmation_reservation.php?id_reservation=' . $id_reservation);
             exit;
             
         } catch (Exception $e) {
@@ -279,11 +286,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
             $erreur_message = "Erreur lors de la réservation: " . $e->getMessage();
             $erreurs[] = $erreur_message;
             error_log("=== ERREUR RÉSERVATION: " . $e->getMessage() . " ===");
+            echo "<div style='background: red; color: white; padding: 20px; margin: 20px;'>ERREUR: " . htmlspecialchars($e->getMessage()) . "</div>";
         }
     }
     
     if (!empty($erreurs)) {
         $erreur = implode("<br>", $erreurs);
+        echo "<div style='background: orange; color: white; padding: 20px; margin: 20px;'>ERREURS DE VALIDATION:<br>" . htmlspecialchars($erreur) . "</div>";
     }
 }
 
@@ -1570,24 +1579,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
 
         const timerInterval = setInterval(updateTimer, 1000);
 
-        // Gestion de la soumission du formulaire
-        document.getElementById('reservationForm').addEventListener('submit', function(e) {
-            const nbPassagers = parseInt(document.getElementById('nombre_passagers').value);
-            const siegesSelectionnes = document.querySelectorAll('input[name="sieges[]"]:checked');
-            
-            if (siegesSelectionnes.length !== nbPassagers) {
-                e.preventDefault();
-                alert(`Vous devez sélectionner exactement ${nbPassagers} siège(s) pour ${nbPassagers} passager(s)`);
-                return;
-            }
-            
-            // Afficher le loading
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('submit-btn').disabled = true;
-            
-            // Arrêter le timer
-            clearInterval(timerInterval);
-        });
+        // JavaScript temporairement désactivé pour debug
+        console.log('JavaScript chargé mais gestionnaire de soumission désactivé');
 
         // Initialisation
         document.getElementById('nombre_passagers').addEventListener('change', function() {
@@ -1615,13 +1608,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
         // Initialiser le calcul du prix
         calculerPrix();
 
-        // Empêcher la fermeture de la page pendant la réservation
-        window.addEventListener('beforeunload', function(e) {
-            if (document.querySelectorAll('input[name="sieges[]"]:checked').length > 0) {
-                e.preventDefault();
-                e.returnValue = 'Votre réservation en cours sera perdue. Êtes-vous sûr de vouloir quitter ?';
-            }
-        });
+        // beforeunload temporairement désactivé pour debug
+        console.log('beforeunload désactivé pour debug');
 
         // Raccourcis clavier
         document.addEventListener('keydown', function(e) {
