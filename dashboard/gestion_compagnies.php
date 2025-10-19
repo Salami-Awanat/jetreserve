@@ -4,10 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tableau de bord - Admin JetReserve</title>
+    <title>Gestion des compagnies - Admin JetReserve</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* Mêmes styles que précédemment */
         :root {
             --primary: #2c3e50;
             --secondary: #7f8c8d;
@@ -185,45 +186,6 @@
             font-size: 1rem;
         }
         
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-card {
-            background: var(--white);
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-            text-align: center;
-            border-left: 4px solid var(--primary);
-            transition: transform 0.3s ease;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .stat-icon {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
-            color: var(--primary);
-        }
-        
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 5px;
-        }
-        
-        .stat-label {
-            color: var(--secondary);
-            font-size: 0.9rem;
-        }
-        
         .data-table {
             background: var(--white);
             border-radius: 8px;
@@ -267,8 +229,6 @@
         }
         
         .badge-success { background: #d1fae5; color: #065f46; }
-        .badge-warning { background: #fef3c7; color: #92400e; }
-        .badge-danger { background: #fee2e2; color: #991b1b; }
         .badge-primary { background: #dbeafe; color: #1e40af; }
         
         .action-buttons {
@@ -293,6 +253,14 @@
             align-items: center;
         }
         
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-family: 'Poppins', sans-serif;
+        }
+        
         @media (max-width: 768px) {
             .admin-container {
                 flex-direction: column;
@@ -300,10 +268,6 @@
             
             .admin-sidebar {
                 width: 100%;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -329,7 +293,7 @@
     <div class="admin-container">
         <nav class="admin-sidebar">
             <ul class="sidebar-menu">
-                <li class="menu-item active">
+                <li class="menu-item">
                     <a href="index.php" class="menu-link">
                         <i class="fas fa-tachometer-alt"></i>
                         Tableau de bord
@@ -353,7 +317,7 @@
                         Utilisateurs
                     </a>
                 </li>
-                <li class="menu-item">
+                <li class="menu-item active">
                     <a href="gestion_compagnies.php" class="menu-link">
                         <i class="fas fa-building"></i>
                         Compagnies
@@ -363,7 +327,6 @@
                     <a href="messages.php" class="menu-link">
                         <i class="fas fa-envelope"></i>
                         Messages
-                        <span class="badge badge-danger"><?php echo $reservations_attente; ?></span>
                     </a>
                 </li>
                 <li class="menu-item">
@@ -377,151 +340,167 @@
         
         <main class="admin-content">
             <div class="content-header">
-                <h1 class="page-title">Tableau de bord</h1>
-                <p class="page-subtitle">Vue d'ensemble de votre activité</p>
-            </div>
-
-            <!-- Cartes de statistiques -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-users"></i>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="page-title">Gestion des compagnies</h1>
+                        <p class="page-subtitle">Gérez les compagnies aériennes partenaires</p>
                     </div>
-                    <div class="stat-number"><?php echo $total_clients; ?></div>
-                    <div class="stat-label">Clients inscrits</div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-ticket-alt"></i>
-                    </div>
-                    <div class="stat-number"><?php echo $total_reservations; ?></div>
-                    <div class="stat-label">Réservations totales</div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-plane"></i>
-                    </div>
-                    <div class="stat-number"><?php echo $total_vols; ?></div>
-                    <div class="stat-label">Vols disponibles</div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-euro-sign"></i>
-                    </div>
-                    <div class="stat-number"><?php echo number_format($chiffre_affaires, 0, ',', ' '); ?>€</div>
-                    <div class="stat-label">Chiffre d'affaires</div>
+                    <a href="gestion_compagnies.php?action=add" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nouvelle compagnie
+                    </a>
                 </div>
             </div>
 
-            <!-- Dernières réservations -->
-            <div class="data-table">
-                <div class="table-header">
-                    <h3 style="margin: 0; color: white;">
-                        <i class="fas fa-clock"></i> Dernières réservations
-                    </h3>
-                </div>
-                <?php
-                try {
-                    $stmt = $pdo->prepare("
-                        SELECT r.*, v.depart, v.arrivee, v.date_depart, 
-                               c.nom_compagnie, u.prenom, u.nom
-                        FROM reservations r 
-                        JOIN vols v ON r.id_vol = v.id_vol 
-                        JOIN compagnies c ON v.id_compagnie = c.id_compagnie 
-                        JOIN users u ON r.id_user = u.id_user 
-                        ORDER BY r.date_reservation DESC 
-                        LIMIT 5
-                    ");
-                    $stmt->execute();
-                    $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            <?php
+            // Traitement des actions
+            if (isset($_GET['action'])) {
+                $action = $_GET['action'];
+                
+                if ($action == 'add' || $action == 'edit') {
+                    $compagnie = null;
+                    if ($action == 'edit' && isset($_GET['id'])) {
+                        $stmt = $pdo->prepare("SELECT * FROM compagnies WHERE id_compagnie = ?");
+                        $stmt->execute([$_GET['id']]);
+                        $compagnie = $stmt->fetch(PDO::FETCH_ASSOC);
+                    }
+                    ?>
                     
-                    if ($reservations) {
-                        echo '<table>';
-                        echo '<thead>';
-                        echo '<tr>';
-                        echo '<th>Client</th>';
-                        echo '<th>Vol</th>';
-                        echo '<th>Date</th>';
-                        echo '<th>Passagers</th>';
-                        echo '<th>Prix</th>';
-                        echo '<th>Statut</th>';
-                        echo '</tr>';
-                        echo '</thead>';
-                        echo '<tbody>';
-                        
-                        foreach ($reservations as $reservation) {
-                            echo '<tr>';
-                            echo '<td>' . htmlspecialchars($reservation['prenom'] . ' ' . $reservation['nom']) . '</td>';
-                            echo '<td>' . htmlspecialchars($reservation['depart'] . ' → ' . $reservation['arrivee']) . '</td>';
-                            echo '<td>' . date('d/m/Y H:i', strtotime($reservation['date_depart'])) . '</td>';
-                            echo '<td>' . $reservation['nombre_passagers'] . '</td>';
-                            echo '<td>' . number_format($reservation['prix_total'], 2, ',', ' ') . '€</td>';
-                            echo '<td><span class="badge badge-' . ($reservation['statut'] == 'confirmé' ? 'success' : ($reservation['statut'] == 'en attente' ? 'warning' : 'danger')) . '">' . ucfirst($reservation['statut']) . '</span></td>';
-                            echo '</tr>';
-                        }
-                        
-                        echo '</tbody>';
-                        echo '</table>';
+                    <div class="data-table">
+                        <div class="table-header">
+                            <h3 style="margin: 0; color: white;">
+                                <i class="fas fa-<?php echo $action == 'add' ? 'plus' : 'edit'; ?>"></i>
+                                <?php echo $action == 'add' ? 'Ajouter une compagnie' : 'Modifier la compagnie'; ?>
+                            </h3>
+                        </div>
+                        <div style="padding: 20px;">
+                            <form method="POST" action="gestion_compagnies.php">
+                                <input type="hidden" name="action" value="<?php echo $action; ?>">
+                                <?php if ($compagnie): ?>
+                                    <input type="hidden" name="id_compagnie" value="<?php echo $compagnie['id_compagnie']; ?>">
+                                <?php endif; ?>
+                                
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                    <div>
+                                        <label>Nom de la compagnie *</label>
+                                        <input type="text" name="nom_compagnie" value="<?php echo $compagnie ? htmlspecialchars($compagnie['nom_compagnie']) : ''; ?>" required 
+                                               class="form-control">
+                                    </div>
+                                    <div>
+                                        <label>Code compagnie *</label>
+                                        <input type="text" name="code_compagnie" value="<?php echo $compagnie ? htmlspecialchars($compagnie['code_compagnie']) : ''; ?>" required 
+                                               class="form-control" maxlength="10" style="text-transform: uppercase;">
+                                    </div>
+                                </div>
+                                
+                                <div class="action-buttons">
+                                    <button type="submit" name="save_compagnie" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Enregistrer
+                                    </button>
+                                    <a href="gestion_compagnies.php" class="btn btn-outline">Annuler</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <?php
+                }
+            }
+
+            // Traitement du formulaire
+            if (isset($_POST['save_compagnie'])) {
+                try {
+                    $data = [
+                        'nom_compagnie' => $_POST['nom_compagnie'],
+                        'code_compagnie' => strtoupper($_POST['code_compagnie'])
+                    ];
+
+                    if ($_POST['action'] == 'add') {
+                        $stmt = $pdo->prepare("INSERT INTO compagnies (nom_compagnie, code_compagnie) VALUES (?, ?)");
+                        $stmt->execute(array_values($data));
+                        $message = "Compagnie ajoutée avec succès!";
                     } else {
-                        echo '<div style="padding: 20px; text-align: center; color: var(--secondary);">Aucune réservation récente.</div>';
+                        $data['id_compagnie'] = $_POST['id_compagnie'];
+                        $stmt = $pdo->prepare("UPDATE compagnies SET nom_compagnie=?, code_compagnie=? WHERE id_compagnie=?");
+                        $stmt->execute(array_values($data));
+                        $message = "Compagnie modifiée avec succès!";
+                    }
+                    
+                    echo '<div style="background: var(--success); color: white; padding: 10px; border-radius: 4px; margin-bottom: 20px;">' . $message . '</div>';
+                } catch (PDOException $e) {
+                    echo '<div style="background: var(--danger); color: white; padding: 10px; border-radius: 4px; margin-bottom: 20px;">Erreur: ' . $e->getMessage() . '</div>';
+                }
+            }
+
+            // Suppression
+            if (isset($_GET['delete'])) {
+                try {
+                    // Vérifier s'il y a des vols associés
+                    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM vols WHERE id_compagnie = ?");
+                    $stmt->execute([$_GET['delete']]);
+                    $vols_count = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+                    
+                    if ($vols_count > 0) {
+                        echo '<div style="background: var(--warning); color: white; padding: 10px; border-radius: 4px; margin-bottom: 20px;">Impossible de supprimer: ' . $vols_count . ' vol(s) associé(s) à cette compagnie.</div>';
+                    } else {
+                        $stmt = $pdo->prepare("DELETE FROM compagnies WHERE id_compagnie = ?");
+                        $stmt->execute([$_GET['delete']]);
+                        echo '<div style="background: var(--success); color: white; padding: 10px; border-radius: 4px; margin-bottom: 20px;">Compagnie supprimée avec succès!</div>';
                     }
                 } catch (PDOException $e) {
-                    echo '<div style="padding: 20px; text-align: center; color: var(--danger);">Erreur: ' . $e->getMessage() . '</div>';
+                    echo '<div style="background: var(--danger); color: white; padding: 10px; border-radius: 4px; margin-bottom: 20px;">Erreur: ' . $e->getMessage() . '</div>';
                 }
-                ?>
-            </div>
+            }
+            ?>
 
-            <!-- Prochains vols -->
+            <!-- Liste des compagnies -->
             <div class="data-table">
                 <div class="table-header">
                     <h3 style="margin: 0; color: white;">
-                        <i class="fas fa-plane-departure"></i> Prochains départs
+                        <i class="fas fa-list"></i> Liste des compagnies
                     </h3>
                 </div>
                 <?php
                 try {
                     $stmt = $pdo->prepare("
-                        SELECT v.*, c.nom_compagnie, a.modele 
-                        FROM vols v 
-                        JOIN compagnies c ON v.id_compagnie = c.id_compagnie 
-                        JOIN avions a ON v.id_avion = a.id_avion 
-                        WHERE v.date_depart > NOW() 
-                        ORDER BY v.date_depart ASC 
-                        LIMIT 5
+                        SELECT c.*, COUNT(v.id_vol) as total_vols
+                        FROM compagnies c 
+                        LEFT JOIN vols v ON c.id_compagnie = v.id_compagnie 
+                        GROUP BY c.id_compagnie 
+                        ORDER BY c.nom_compagnie
                     ");
                     $stmt->execute();
-                    $vols = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    $compagnies = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     
-                    if ($vols) {
+                    if ($compagnies) {
                         echo '<table>';
                         echo '<thead>';
                         echo '<tr>';
-                        echo '<th>Vol</th>';
                         echo '<th>Compagnie</th>';
-                        echo '<th>Date départ</th>';
-                        echo '<th>Places</th>';
-                        echo '<th>Prix</th>';
+                        echo '<th>Code</th>';
+                        echo '<th>Vols</th>';
+                        echo '<th>Actions</th>';
                         echo '</tr>';
                         echo '</thead>';
                         echo '<tbody>';
                         
-                        foreach ($vols as $vol) {
+                        foreach ($compagnies as $compagnie) {
                             echo '<tr>';
-                            echo '<td>' . htmlspecialchars($vol['depart'] . ' → ' . $vol['arrivee']) . '</td>';
-                            echo '<td>' . htmlspecialchars($vol['nom_compagnie']) . '</td>';
-                            echo '<td>' . date('d/m/Y H:i', strtotime($vol['date_depart'])) . '</td>';
-                            echo '<td>' . $vol['places_disponibles'] . '</td>';
-                            echo '<td>' . number_format($vol['prix'], 2, ',', ' ') . '€</td>';
+                            echo '<td>';
+                            echo '<strong>' . htmlspecialchars($compagnie['nom_compagnie']) . '</strong><br>';
+                            echo '<small>ID: ' . $compagnie['id_compagnie'] . '</small>';
+                            echo '</td>';
+                            echo '<td><span class="badge badge-primary">' . htmlspecialchars($compagnie['code_compagnie']) . '</span></td>';
+                            echo '<td>' . $compagnie['total_vols'] . ' vol(s)</td>';
+                            echo '<td class="action-buttons">';
+                            echo '<a href="gestion_compagnies.php?action=edit&id=' . $compagnie['id_compagnie'] . '" class="btn btn-primary btn-sm">Modifier</a>';
+                            echo '<a href="gestion_compagnies.php?delete=' . $compagnie['id_compagnie'] . '" class="btn btn-danger btn-sm" onclick="return confirm(\'Êtes-vous sûr de vouloir supprimer cette compagnie ?\')">Supprimer</a>';
+                            echo '</td>';
                             echo '</tr>';
                         }
                         
                         echo '</tbody>';
                         echo '</table>';
                     } else {
-                        echo '<div style="padding: 20px; text-align: center; color: var(--secondary);">Aucun vol à venir.</div>';
+                        echo '<div style="padding: 20px; text-align: center; color: var(--secondary);">Aucune compagnie trouvée.</div>';
                     }
                 } catch (PDOException $e) {
                     echo '<div style="padding: 20px; text-align: center; color: var(--danger);">Erreur: ' . $e->getMessage() . '</div>';

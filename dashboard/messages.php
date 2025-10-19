@@ -4,10 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tableau de bord - Admin JetReserve</title>
+    <title>Messages - Admin JetReserve</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* Mêmes styles que précédemment */
         :root {
             --primary: #2c3e50;
             --secondary: #7f8c8d;
@@ -110,6 +111,11 @@
             color: var(--white);
         }
         
+        .btn-success {
+            background-color: var(--success);
+            color: var(--white);
+        }
+        
         .btn:hover {
             opacity: 0.9;
             transform: translateY(-2px);
@@ -185,45 +191,6 @@
             font-size: 1rem;
         }
         
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-card {
-            background: var(--white);
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-            text-align: center;
-            border-left: 4px solid var(--primary);
-            transition: transform 0.3s ease;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .stat-icon {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
-            color: var(--primary);
-        }
-        
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 5px;
-        }
-        
-        .stat-label {
-            color: var(--secondary);
-            font-size: 0.9rem;
-        }
-        
         .data-table {
             background: var(--white);
             border-radius: 8px;
@@ -281,16 +248,13 @@
             font-size: 0.8rem;
         }
         
-        .d-flex {
-            display: flex;
-        }
-        
-        .justify-content-between {
-            justify-content: space-between;
-        }
-        
-        .align-items-center {
-            align-items: center;
+        .message-content {
+            max-height: 200px;
+            overflow-y: auto;
+            background: var(--light);
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
         }
         
         @media (max-width: 768px) {
@@ -300,10 +264,6 @@
             
             .admin-sidebar {
                 width: 100%;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -329,7 +289,7 @@
     <div class="admin-container">
         <nav class="admin-sidebar">
             <ul class="sidebar-menu">
-                <li class="menu-item active">
+                <li class="menu-item">
                     <a href="index.php" class="menu-link">
                         <i class="fas fa-tachometer-alt"></i>
                         Tableau de bord
@@ -359,11 +319,10 @@
                         Compagnies
                     </a>
                 </li>
-                <li class="menu-item">
+                <li class="menu-item active">
                     <a href="messages.php" class="menu-link">
                         <i class="fas fa-envelope"></i>
                         Messages
-                        <span class="badge badge-danger"><?php echo $reservations_attente; ?></span>
                     </a>
                 </li>
                 <li class="menu-item">
@@ -377,96 +336,69 @@
         
         <main class="admin-content">
             <div class="content-header">
-                <h1 class="page-title">Tableau de bord</h1>
-                <p class="page-subtitle">Vue d'ensemble de votre activité</p>
+                <h1 class="page-title">Messages et notifications</h1>
+                <p class="page-subtitle">Gérez les communications avec les clients</p>
             </div>
 
-            <!-- Cartes de statistiques -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div class="stat-number"><?php echo $total_clients; ?></div>
-                    <div class="stat-label">Clients inscrits</div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-ticket-alt"></i>
-                    </div>
-                    <div class="stat-number"><?php echo $total_reservations; ?></div>
-                    <div class="stat-label">Réservations totales</div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-plane"></i>
-                    </div>
-                    <div class="stat-number"><?php echo $total_vols; ?></div>
-                    <div class="stat-label">Vols disponibles</div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-euro-sign"></i>
-                    </div>
-                    <div class="stat-number"><?php echo number_format($chiffre_affaires, 0, ',', ' '); ?>€</div>
-                    <div class="stat-label">Chiffre d'affaires</div>
-                </div>
-            </div>
-
-            <!-- Dernières réservations -->
+            <!-- Réservations en attente -->
             <div class="data-table">
                 <div class="table-header">
                     <h3 style="margin: 0; color: white;">
-                        <i class="fas fa-clock"></i> Dernières réservations
+                        <i class="fas fa-clock"></i> Réservations en attente de confirmation
                     </h3>
                 </div>
                 <?php
                 try {
                     $stmt = $pdo->prepare("
                         SELECT r.*, v.depart, v.arrivee, v.date_depart, 
-                               c.nom_compagnie, u.prenom, u.nom
+                               c.nom_compagnie, u.prenom, u.nom, u.email
                         FROM reservations r 
                         JOIN vols v ON r.id_vol = v.id_vol 
                         JOIN compagnies c ON v.id_compagnie = c.id_compagnie 
                         JOIN users u ON r.id_user = u.id_user 
-                        ORDER BY r.date_reservation DESC 
-                        LIMIT 5
+                        WHERE r.statut = 'en attente'
+                        ORDER BY r.date_reservation DESC
                     ");
                     $stmt->execute();
-                    $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    $reservations_attente = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     
-                    if ($reservations) {
+                    if ($reservations_attente) {
                         echo '<table>';
                         echo '<thead>';
                         echo '<tr>';
+                        echo '<th>Réservation</th>';
                         echo '<th>Client</th>';
                         echo '<th>Vol</th>';
-                        echo '<th>Date</th>';
-                        echo '<th>Passagers</th>';
+                        echo '<th>Date vol</th>';
                         echo '<th>Prix</th>';
-                        echo '<th>Statut</th>';
+                        echo '<th>Actions</th>';
                         echo '</tr>';
                         echo '</thead>';
                         echo '<tbody>';
                         
-                        foreach ($reservations as $reservation) {
+                        foreach ($reservations_attente as $reservation) {
                             echo '<tr>';
-                            echo '<td>' . htmlspecialchars($reservation['prenom'] . ' ' . $reservation['nom']) . '</td>';
+                            echo '<td>';
+                            echo '<strong>#' . $reservation['id_reservation'] . '</strong><br>';
+                            echo '<small>' . date('d/m/Y H:i', strtotime($reservation['date_reservation'])) . '</small>';
+                            echo '</td>';
+                            echo '<td>';
+                            echo htmlspecialchars($reservation['prenom'] . ' ' . $reservation['nom']) . '<br>';
+                            echo '<small>' . htmlspecialchars($reservation['email']) . '</small>';
+                            echo '</td>';
                             echo '<td>' . htmlspecialchars($reservation['depart'] . ' → ' . $reservation['arrivee']) . '</td>';
                             echo '<td>' . date('d/m/Y H:i', strtotime($reservation['date_depart'])) . '</td>';
-                            echo '<td>' . $reservation['nombre_passagers'] . '</td>';
                             echo '<td>' . number_format($reservation['prix_total'], 2, ',', ' ') . '€</td>';
-                            echo '<td><span class="badge badge-' . ($reservation['statut'] == 'confirmé' ? 'success' : ($reservation['statut'] == 'en attente' ? 'warning' : 'danger')) . '">' . ucfirst($reservation['statut']) . '</span></td>';
+                            echo '<td class="action-buttons">';
+                            echo '<a href="gestion_reservations.php?action=view&id=' . $reservation['id_reservation'] . '" class="btn btn-primary btn-sm">Traiter</a>';
+                            echo '</td>';
                             echo '</tr>';
                         }
                         
                         echo '</tbody>';
                         echo '</table>';
                     } else {
-                        echo '<div style="padding: 20px; text-align: center; color: var(--secondary);">Aucune réservation récente.</div>';
+                        echo '<div style="padding: 20px; text-align: center; color: var(--secondary);">Aucune réservation en attente.</div>';
                     }
                 } catch (PDOException $e) {
                     echo '<div style="padding: 20px; text-align: center; color: var(--danger);">Erreur: ' . $e->getMessage() . '</div>';
@@ -474,61 +406,180 @@
                 ?>
             </div>
 
-            <!-- Prochains vols -->
+            <!-- Historique des emails -->
             <div class="data-table">
                 <div class="table-header">
                     <h3 style="margin: 0; color: white;">
-                        <i class="fas fa-plane-departure"></i> Prochains départs
+                        <i class="fas fa-envelope"></i> Historique des emails envoyés
                     </h3>
                 </div>
                 <?php
                 try {
                     $stmt = $pdo->prepare("
-                        SELECT v.*, c.nom_compagnie, a.modele 
-                        FROM vols v 
-                        JOIN compagnies c ON v.id_compagnie = c.id_compagnie 
-                        JOIN avions a ON v.id_avion = a.id_avion 
-                        WHERE v.date_depart > NOW() 
-                        ORDER BY v.date_depart ASC 
-                        LIMIT 5
+                        SELECT e.*, u.prenom, u.nom, u.email as user_email
+                        FROM emails e 
+                        JOIN users u ON e.id_user = u.id_user 
+                        ORDER BY e.date_envoi DESC
+                        LIMIT 20
                     ");
                     $stmt->execute();
-                    $vols = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    $emails = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     
-                    if ($vols) {
+                    if ($emails) {
                         echo '<table>';
                         echo '<thead>';
                         echo '<tr>';
-                        echo '<th>Vol</th>';
-                        echo '<th>Compagnie</th>';
-                        echo '<th>Date départ</th>';
-                        echo '<th>Places</th>';
-                        echo '<th>Prix</th>';
+                        echo '<th>Destinataire</th>';
+                        echo '<th>Sujet</th>';
+                        echo '<th>Type</th>';
+                        echo '<th>Date</th>';
+                        echo '<th>Statut</th>';
+                        echo '<th>Actions</th>';
                         echo '</tr>';
                         echo '</thead>';
                         echo '<tbody>';
                         
-                        foreach ($vols as $vol) {
+                        foreach ($emails as $email) {
                             echo '<tr>';
-                            echo '<td>' . htmlspecialchars($vol['depart'] . ' → ' . $vol['arrivee']) . '</td>';
-                            echo '<td>' . htmlspecialchars($vol['nom_compagnie']) . '</td>';
-                            echo '<td>' . date('d/m/Y H:i', strtotime($vol['date_depart'])) . '</td>';
-                            echo '<td>' . $vol['places_disponibles'] . '</td>';
-                            echo '<td>' . number_format($vol['prix'], 2, ',', ' ') . '€</td>';
+                            echo '<td>';
+                            echo htmlspecialchars($email['prenom'] . ' ' . $email['nom']) . '<br>';
+                            echo '<small>' . htmlspecialchars($email['user_email']) . '</small>';
+                            echo '</td>';
+                            echo '<td>' . htmlspecialchars($email['sujet']) . '</td>';
+                            echo '<td><span class="badge badge-primary">' . ucfirst($email['type']) . '</span></td>';
+                            echo '<td>' . date('d/m/Y H:i', strtotime($email['date_envoi'])) . '</td>';
+                            echo '<td><span class="badge badge-' . ($email['statut'] == 'envoyé' ? 'success' : 'danger') . '">' . ucfirst($email['statut']) . '</span></td>';
+                            echo '<td class="action-buttons">';
+                            echo '<button onclick="showEmailContent(' . $email['id_email'] . ', \'' . htmlspecialchars(addslashes($email['contenu'])) . '\')" class="btn btn-primary btn-sm">Voir</button>';
+                            echo '</td>';
                             echo '</tr>';
                         }
                         
                         echo '</tbody>';
                         echo '</table>';
                     } else {
-                        echo '<div style="padding: 20px; text-align: center; color: var(--secondary);">Aucun vol à venir.</div>';
+                        echo '<div style="padding: 20px; text-align: center; color: var(--secondary);">Aucun email envoyé.</div>';
                     }
                 } catch (PDOException $e) {
                     echo '<div style="padding: 20px; text-align: center; color: var(--danger);">Erreur: ' . $e->getMessage() . '</div>';
                 }
                 ?>
             </div>
+
+            <!-- Formulaire d'envoi de message -->
+            <div class="data-table">
+                <div class="table-header">
+                    <h3 style="margin: 0; color: white;">
+                        <i class="fas fa-paper-plane"></i> Envoyer un message aux clients
+                    </h3>
+                </div>
+                <div style="padding: 20px;">
+                    <form method="POST" action="messages.php">
+                        <div style="margin-bottom: 15px;">
+                            <label><strong>Destinataires:</strong></label><br>
+                            <select name="destinataires[]" multiple class="form-control" style="height: 100px;">
+                                <option value="all">Tous les clients</option>
+                                <?php
+                                $stmt = $pdo->query("SELECT id_user, prenom, nom, email FROM users WHERE role = 'client'");
+                                while ($user = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                                    echo '<option value="' . $user['id_user'] . '">' . htmlspecialchars($user['prenom'] . ' ' . $user['nom'] . ' (' . $user['email'] . ')') . '</option>';
+                                }
+                                ?>
+                            </select>
+                            <small style="color: var(--secondary);">Maintenez Ctrl pour sélectionner plusieurs destinataires</small>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label><strong>Sujet:</strong></label>
+                            <input type="text" name="sujet" class="form-control" required>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label><strong>Message:</strong></label>
+                            <textarea name="contenu" rows="6" class="form-control" required placeholder="Tapez votre message ici..."></textarea>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label><strong>Type de message:</strong></label>
+                            <select name="type" class="form-control">
+                                <option value="confirmation">Confirmation</option>
+                                <option value="promotion">Promotion</option>
+                                <option value="information">Information</option>
+                                <option value="newsletter">Newsletter</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" name="envoyer_message" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Envoyer le message
+                        </button>
+                    </form>
+                </div>
+            </div>
         </main>
     </div>
+
+    <!-- Modal pour afficher le contenu de l'email -->
+    <div id="emailModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 15px;">
+                <h3 id="modalTitle">Contenu de l'email</h3>
+                <button onclick="closeModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+            <div id="modalContent" class="message-content"></div>
+            <div style="text-align: right; margin-top: 15px;">
+                <button onclick="closeModal()" class="btn btn-outline">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showEmailContent(id, content) {
+            document.getElementById('modalTitle').textContent = 'Contenu de l\'email #' + id;
+            document.getElementById('modalContent').innerHTML = content.replace(/\n/g, '<br>');
+            document.getElementById('emailModal').style.display = 'flex';
+        }
+        
+        function closeModal() {
+            document.getElementById('emailModal').style.display = 'none';
+        }
+        
+        // Fermer la modal en cliquant à l'extérieur
+        document.getElementById('emailModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
+
+    <?php
+    // Traitement de l'envoi de message
+    if (isset($_POST['envoyer_message'])) {
+        try {
+            $destinataires = $_POST['destinataires'];
+            $sujet = $_POST['sujet'];
+            $contenu = $_POST['contenu'];
+            $type = $_POST['type'];
+            
+            if (in_array('all', $destinataires)) {
+                // Envoyer à tous les clients
+                $stmt = $pdo->query("SELECT id_user FROM users WHERE role = 'client'");
+                $users = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            } else {
+                $users = $destinataires;
+            }
+            
+            $emails_envoyes = 0;
+            foreach ($users as $id_user) {
+                $stmt = $pdo->prepare("INSERT INTO emails (id_user, sujet, contenu, type, statut) VALUES (?, ?, ?, ?, 'envoyé')");
+                $stmt->execute([$id_user, $sujet, $contenu, $type]);
+                $emails_envoyes++;
+            }
+            
+            echo '<div style="background: var(--success); color: white; padding: 10px; border-radius: 4px; margin-bottom: 20px;">Message envoyé à ' . $emails_envoyes . ' client(s) avec succès!</div>';
+        } catch (PDOException $e) {
+            echo '<div style="background: var(--danger); color: white; padding: 10px; border-radius: 4px; margin-bottom: 20px;">Erreur: ' . $e->getMessage() . '</div>';
+        }
+    }
+    ?>
 </body>
 </html>

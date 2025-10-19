@@ -8,29 +8,63 @@ if (isset($_POST['connecter'])) {
     $email = trim($_POST['email']);
     $mdp = $_POST['password'] ?? '';
 
-    $query = $pdo->prepare("SELECT * FROM users WHERE email = ? AND password = ?");
-    $query->execute([$email, $mdp]);
+    // CORRECTION : Utiliser password_verify pour les mots de passe hashés
+    $query = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+    $query->execute([$email]);
     $user = $query->fetch(PDO::FETCH_ASSOC);
 
     if ($user) {
-        // CORRECTION : Utiliser les mêmes noms que dans votre header
-        $_SESSION['id_user'] = $user['id_user'];
-        $_SESSION['nom'] = $user['nom'];  // Votre header utilise $_SESSION['nom']
-        $_SESSION['prenom'] = $user['prenom'];
-        $_SESSION['email'] = $user['email'];
-        $_SESSION['role'] = $user['role'];
-        $_SESSION['statut'] = $user['statut'];
+        // Vérifier le mot de passe (supporte les anciens mots de passe en clair et les nouveaux hashés)
+        $password_valid = false;
+        
+        // Si le mot de passe est hashé (commence par $2y$)
+        if (password_verify($mdp, $user['password'])) {
+            $password_valid = true;
+        } 
+        // Si le mot de passe est en clair (pour la transition)
+        elseif ($user['password'] === $mdp) {
+            $password_valid = true;
+            // Optionnel : re-hasher le mot de passe pour la sécurité
+            $hashed_password = password_hash($mdp, PASSWORD_DEFAULT);
+            $update_stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id_user = ?");
+            $update_stmt->execute([$hashed_password, $user['id_user']]);
+        }
 
-        if ($user['statut'] === 'inactif') {
-            $message = "⚠️ Votre compte est inactif. Veuillez contacter l'administrateur.";
-        } else {
-            if ($user['role'] === 'admin') {
-        header("Location: ../dashboard/index.php");
-                exit;
+        if ($password_valid) {
+            // CORRECTION : Utiliser les mêmes noms que dans votre header
+            $_SESSION['id_user'] = $user['id_user'];
+            $_SESSION['nom'] = $user['nom'];
+            $_SESSION['prenom'] = $user['prenom'];
+            $_SESSION['email'] = $user['email'];
+            $_SESSION['role'] = $user['role'];
+            $_SESSION['statut'] = $user['statut'];
+
+            if ($user['statut'] === 'inactif') {
+                $message = "⚠️ Votre compte est inactif. Veuillez contacter l'administrateur.";
             } else {
-                header("Location: index2.php");
+                // Gestion des redirections
+                $redirect_url = "index2.php"; // Par défaut pour les clients
+                
+                // CORRECTION : Chemin vers le dashboard admin
+                if ($user['role'] === 'admin') {
+                    $redirect_url = "../dashboard/index.php";
+                }
+                
+                // Redirection vers la page demandée ou le tableau de bord
+                if (isset($_GET['redirect']) && isset($_GET['id_vol'])) {
+                    // Si l'utilisateur voulait voir les détails d'un vol
+                    header("Location: ../vol_details.php?id_vol=" . $_GET['id_vol']);
+                } elseif (isset($_GET['redirect'])) {
+                    // Autres redirections
+                    header("Location: ../" . $_GET['redirect'] . ".php");
+                } else {
+                    // Redirection normale
+                    header("Location: " . $redirect_url);
+                }
                 exit;
             }
+        } else {
+            $message = "❌ Email ou mot de passe incorrect.";
         }
     } else {
         $message = "❌ Email ou mot de passe incorrect.";
@@ -107,7 +141,7 @@ if (isset($_POST['connecter'])) {
                 </div>
             </div>
         </div>
-    </div> <!-- Fermeture correcte de la div main-banner-container -->
+    </div>
         
     <!-- Section de connexion -->
     <section class="auth-section">
@@ -116,9 +150,21 @@ if (isset($_POST['connecter'])) {
                 <i class="fas fa-user-circle fa-3x text-primary mb-3"></i>
                 <h2>Connectez-vous à votre compte <span style="color:#e74c3c;">JetReserve</span></h2>
                 <p class="text-muted">Accédez à votre espace personnel</p>
+                
+                <!-- Message d'information pour les tests -->
+                <?php if (isset($_GET['redirect'])): ?>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Veuillez vous connecter pour accéder à cette page.
+                    </div>
+                <?php endif; ?>
             </div>
             
-            <?php if (!empty($message)) echo "<div class='message'>$message</div>"; ?>
+            <?php if (!empty($message)): ?>
+                <div class="message alert alert-danger">
+                    <?php echo $message; ?>
+                </div>
+            <?php endif; ?>
 
             <form method="post">
                 <div class="mb-4">
@@ -127,7 +173,9 @@ if (isset($_POST['connecter'])) {
                         <span class="input-group-text">
                             <i class="fas fa-envelope"></i>
                         </span>
-                        <input type="email" id="email" name="email" placeholder="exemple@email.com" required>
+                        <input type="email" id="email" name="email" 
+                               value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" 
+                               placeholder="exemple@email.com" required>
                     </div>
                 </div>
 
@@ -145,7 +193,7 @@ if (isset($_POST['connecter'])) {
                 </div>
 
                 <div class="mb-4 form-check">
-                    <input type="checkbox" id="remember">
+                    <input type="checkbox" id="remember" name="remember">
                     <label for="remember">Se souvenir de moi</label>
                 </div>
 
@@ -154,7 +202,7 @@ if (isset($_POST['connecter'])) {
                 </button>
             </form>
 
-            <div class="form-footer">
+            <div class="form-footer mt-4">
                 <p>Pas encore de compte ? <a href="inscription.php" class="fw-bold">Inscrivez-vous</a></p>
                 <p><a href="../index.php">⬅ Retour à l'accueil</a></p>
             </div>
