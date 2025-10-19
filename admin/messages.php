@@ -30,7 +30,7 @@ if (isset($_POST['send_message'])) {
 }
 
 // Récupération des utilisateurs pour le formulaire d'envoi
-$stmt = $bdd->query("SELECT id_user, nom, prenom, email FROM " . TABLE_USERS . " ORDER BY nom, prenom");
+$stmt = $bdd->query("SELECT id_user, nom, prenom, email FROM " . $users . " ORDER BY nom, prenom");
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
