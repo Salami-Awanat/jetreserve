@@ -17,8 +17,7 @@ if (isset($_POST['add_compagnie'])) {
     $nom_compagnie = trim($_POST['nom_compagnie']);
     $code_compagnie = trim($_POST['code_compagnie']);
     $pays = trim($_POST['pays']);
-    $description = trim($_POST['description']);
-    
+      
     try {
         // Vérifier si le code compagnie existe déjà
         $stmt = $pdo->prepare("SELECT id_compagnie FROM compagnies WHERE code_compagnie = ?");
@@ -49,8 +48,8 @@ if (isset($_POST['edit_compagnie'])) {
     $description = trim($_POST['description']);
     
     try {
-        $stmt = $pdo->prepare("UPDATE compagnies SET nom_compagnie = ?, code_compagnie = ?, pays = ?, description = ? WHERE id_compagnie = ?");
-        $stmt->execute([$nom_compagnie, $code_compagnie, $pays, $description, $compagnie_id]);
+        $stmt = $pdo->prepare("UPDATE compagnies SET nom_compagnie = ?, code_compagnie = ?, pays = ? WHERE id_compagnie = ?");
+        $stmt->execute([$nom_compagnie, $code_compagnie, $pays, $compagnie_id]);
         
         $message = "Compagnie modifiée avec succès.";
         $message_type = 'success';
@@ -152,11 +151,7 @@ include 'includes/header.php';
                     <input type="text" class="form-control" id="pays" name="pays" 
                            value="<?php echo $compagnie_to_edit ? htmlspecialchars($compagnie_to_edit['pays']) : ''; ?>" required>
                 </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="description">Description</label>
-                    <textarea class="form-control" id="description" name="description" rows="4"><?php echo $compagnie_to_edit ? htmlspecialchars($compagnie_to_edit['description']) : ''; ?></textarea>
-                </div>
+               
                 
                 <div class="form-actions">
                     <?php if ($compagnie_to_edit): ?>
@@ -192,7 +187,6 @@ include 'includes/header.php';
                             <th>Code</th>
                             <th>Pays</th>
                             <th>Vols</th>
-                            <th>Description</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -212,15 +206,7 @@ include 'includes/header.php';
                                     <?php echo $compagnie['vols_count']; ?> vol(s)
                                 </span>
                             </td>
-                            <td>
-                                <?php if ($compagnie['description']): ?>
-                                <span title="<?php echo htmlspecialchars($compagnie['description']); ?>">
-                                    <?php echo strlen($compagnie['description']) > 50 ? substr($compagnie['description'], 0, 50) . '...' : $compagnie['description']; ?>
-                                </span>
-                                <?php else: ?>
-                                <span style="color: #94a3b8; font-style: italic;">Aucune description</span>
-                                <?php endif; ?>
-                            </td>
+                          
                             <td>
                                 <div class="action-buttons">
                                     <a href="compagnies.php?edit=<?php echo $compagnie['id_compagnie']; ?>" class="btn btn-primary btn-sm" title="Modifier">
