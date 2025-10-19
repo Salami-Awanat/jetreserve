@@ -25,7 +25,7 @@ if ($avion_id > 0) {
     $avion_selected = $stmt->fetch(PDO::FETCH_ASSOC);
     
     // Récupérer les sièges de l'avion
-    $stmt = $pdo->prepare("SELECT * FROM sieges_avion WHERE id_avion = ? ORDER BY rangee, colonne");
+    $stmt = $pdo->prepare("SELECT * FROM sieges_avion WHERE id_avion = ? ORDER BY rang, position");
     $stmt->execute([$avion_id]);
     $sieges = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
@@ -37,7 +37,7 @@ $message_type = '';
 // Générer automatiquement les sièges
 if (isset($_POST['generate_sieges'])) {
     $avion_id = intval($_POST['avion_id']);
-    $config_type = $_POST['config_type'];
+    $config_type = $_POST['configuration_sieges'];
     
     try {
         // Supprimer les sièges existants
@@ -71,14 +71,17 @@ if (isset($_POST['generate_sieges'])) {
         $config = $configurations[$config_type];
         $rangee_num = 1;
         
-        // Sièges Affaires
+        // CORRECTION : Sièges Affaires - ajouter les variables manquantes
         for ($i = 0; $i < $config['rangees_affaires']; $i++) {
             foreach ($config['colonnes_affaires'] as $colonne) {
-                $type = 'affaires';
-                $prix_supplement = 150.00;
+                $rang = $rangee_num; // ← VARIABLE AJOUTÉE
+                $position = $colonne; // ← VARIABLE AJOUTÉE
+                $classe = 'affaires';
+                $supplement_prix = 150.00;
                 
-                $stmt = $pdo->prepare("INSERT INTO sieges_avion (id_avion, rangee, colonne, type, prix_supplement) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$avion_id, $rangee_num, $colonne, $type, $prix_supplement]);
+                // CORRECTION : Uniformiser les noms de colonnes
+                $stmt = $pdo->prepare("INSERT INTO sieges_avion (id_avion, rang, position, classe, supplement_prix) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([$avion_id, $rang, $position, $classe, $supplement_prix]);
             }
             $rangee_num++;
         }
@@ -87,11 +90,14 @@ if (isset($_POST['generate_sieges'])) {
         if (isset($config['rangees_premium'])) {
             for ($i = 0; $i < $config['rangees_premium']; $i++) {
                 foreach ($config['colonnes_premium'] as $colonne) {
-                    $type = 'premium';
-                    $prix_supplement = 75.00;
+                    $rang = $rangee_num; // ← VARIABLE AJOUTÉE
+                    $position = $colonne; // ← VARIABLE AJOUTÉE
+                    $classe = 'premium'; // ← CORRECTION : 'type' → 'classe'
+                    $supplement_prix = 75.00; // ← CORRECTION : 'prix_supplement' → 'supplement_prix'
                     
-                    $stmt = $pdo->prepare("INSERT INTO sieges_avion (id_avion, rangee, colonne, type, prix_supplement) VALUES (?, ?, ?, ?, ?)");
-                    $stmt->execute([$avion_id, $rangee_num, $colonne, $type, $prix_supplement]);
+                    // CORRECTION : Uniformiser les noms de colonnes
+                    $stmt = $pdo->prepare("INSERT INTO sieges_avion (id_avion, rang, position, classe, supplement_prix) VALUES (?, ?, ?, ?, ?)");
+                    $stmt->execute([$avion_id, $rang, $position, $classe, $supplement_prix]);
                 }
                 $rangee_num++;
             }
@@ -100,11 +106,15 @@ if (isset($_POST['generate_sieges'])) {
         // Sièges Économique
         for ($i = 0; $i < $config['rangees_economique']; $i++) {
             foreach ($config['colonnes_economique'] as $colonne) {
-                $type = 'standard';
-                $prix_supplement = 0.00;
+                $rang = $rangee_num;
+                $position = $colonne;
+                $cote = ($colonne < 'D') ? 'gauche' : 'droite'; // CORRECTION : $position → $colonne
+                $classe = 'economique';
+                $supplement_prix = 0.00;
                 
-                $stmt = $pdo->prepare("INSERT INTO sieges_avion (id_avion, rangee, colonne, type, prix_supplement) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$avion_id, $rangee_num, $colonne, $type, $prix_supplement]);
+                // CORRECTION : Variable $id_avion → $avion_id
+                $stmt = $pdo->prepare("INSERT INTO sieges_avion (id_avion, rang, position, cote, classe, supplement_prix) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$avion_id, $rang, $position, $cote, $classe, $supplement_prix]);
             }
             $rangee_num++;
         }
@@ -113,7 +123,7 @@ if (isset($_POST['generate_sieges'])) {
         $message_type = 'success';
         
         // Recharger les sièges
-        $stmt = $pdo->prepare("SELECT * FROM sieges_avion WHERE id_avion = ? ORDER BY rangee, colonne");
+        $stmt = $pdo->prepare("SELECT * FROM sieges_avion WHERE id_avion = ? ORDER BY rang, position");
         $stmt->execute([$avion_id]);
         $sieges = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
@@ -125,19 +135,20 @@ if (isset($_POST['generate_sieges'])) {
 
 // Modifier un siège
 if (isset($_POST['edit_siege'])) {
-    $siege_id = intval($_POST['siege_id']);
-    $type = $_POST['type'];
-    $prix_supplement = floatval($_POST['prix_supplement']);
+    $siege_id = intval($_POST['id_siege']);
+    $classe = $_POST['classe']; // ← CORRECTION : $type → $classe
+    $supplement_prix = floatval($_POST['supplement_prix']); // ← CORRECTION : $prix_supplement → $supplement_prix
     
     try {
-        $stmt = $pdo->prepare("UPDATE sieges_avion SET type = ?, prix_supplement = ? WHERE id_siege = ?");
-        $stmt->execute([$type, $prix_supplement, $siege_id]);
+        // CORRECTION : Uniformiser les noms de colonnes
+        $stmt = $pdo->prepare("UPDATE sieges_avion SET classe = ?, supplement_prix = ? WHERE id_siege = ?");
+        $stmt->execute([$classe, $supplement_prix, $siege_id]);
         
         $message = "Siège modifié avec succès.";
         $message_type = 'success';
         
         // Recharger les sièges
-        $stmt = $pdo->prepare("SELECT * FROM sieges_avion WHERE id_avion = ? ORDER BY rangee, colonne");
+        $stmt = $pdo->prepare("SELECT * FROM sieges_avion WHERE id_avion = ? ORDER BY rang, position");
         $stmt->execute([$avion_id]);
         $sieges = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
@@ -153,7 +164,7 @@ if (isset($_GET['delete_siege'])) {
     
     try {
         // Vérifier si le siège est réservé
-        $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM reservation_sieges WHERE siege_id = ?");
+        $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM reservation_sieges WHERE id_siege = ?");
         $stmt->execute([$siege_id]);
         $reservations_count = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
         
@@ -168,7 +179,7 @@ if (isset($_GET['delete_siege'])) {
             $message_type = 'success';
             
             // Recharger les sièges
-            $stmt = $pdo->prepare("SELECT * FROM sieges_avion WHERE id_avion = ? ORDER BY rangee, colonne");
+            $stmt = $pdo->prepare("SELECT * FROM sieges_avion WHERE id_avion = ? ORDER BY rang, position");
             $stmt->execute([$avion_id]);
             $sieges = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
@@ -209,7 +220,7 @@ include 'includes/header.php';
                         <?php foreach ($avions as $avion): ?>
                         <option value="<?php echo $avion['id_avion']; ?>" 
                             <?php echo $avion_id == $avion['id_avion'] ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($avion['modele']); ?> (<?php echo $avion['capacite']; ?> places)
+                            <?php echo htmlspecialchars($avion['modele']); ?> (<?php echo $avion['capacite_total']; ?> places)
                         </option>
                         <?php endforeach; ?>
                     </select>
@@ -233,7 +244,7 @@ include 'includes/header.php';
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label" for="config_type">Type de configuration *</label>
-                        <select class="form-control" id="config_type" name="config_type" required>
+                        <select class="form-control" id="configuration_sieges" name="configuration_sieges" required>
                             <option value="affaires_economique">Cabine Affaires + Économique (180 sièges)</option>
                             <option value="premium_economique">Cabine Premium + Économique (180 sièges)</option>
                             <option value="tout_economique">Tout Économique (180 sièges)</option>
@@ -291,7 +302,7 @@ include 'includes/header.php';
                 <!-- Cabine Affaires -->
                 <?php
                 $rangees_affaires = array_filter($sieges, function($siege) {
-                    return $siege['type'] === 'affaires';
+                    return $siege['classe'] === 'affaires';
                 });
                 if (!empty($rangees_affaires)):
                 ?>
@@ -300,8 +311,8 @@ include 'includes/header.php';
                     <?php
                     $rangees = [];
                     foreach ($sieges as $siege) {
-                        if ($siege['type'] === 'affaires') {
-                            $rangees[$siege['rangee']][] = $siege;
+                        if ($siege['classe'] === 'affaires') {
+                            $rangees[$siege['rang']][] = $siege;
                         }
                     }
                     ksort($rangees);
@@ -316,14 +327,14 @@ include 'includes/header.php';
                         foreach ($colonnes_affaires as $col_index => $colonne):
                             $siege_trouve = null;
                             foreach ($sieges_rangee as $siege) {
-                                if ($siege['colonne'] === $colonne) {
+                                if ($siege['position'] === $colonne) {
                                     $siege_trouve = $siege;
                                     break;
                                 }
                             }
                         ?>
-                        <div class="seat-visual <?php echo $siege_trouve ? 'seat-' . $siege_trouve['type'] : 'seat-empty'; ?>" 
-                             title="<?php echo $siege_trouve ? $colonne . $rangee_num . ' - ' . ucfirst($siege_trouve['type']) . ' (+' . $siege_trouve['prix_supplement'] . '€)' : 'Siège non configuré'; ?>">
+                        <div class="seat-visual <?php echo $siege_trouve ? 'seat-' . $siege_trouve['classe'] : 'seat-empty'; ?>" 
+                             title="<?php echo $siege_trouve ? $colonne . $rangee_num . ' - ' . ucfirst($siege_trouve['classe']) . ' (+' . $siege_trouve['supplement_prix'] . '€)' : 'Siège non configuré'; ?>">
                             <?php if ($siege_trouve): ?>
                             <?php echo $colonne; ?>
                             <?php endif; ?>
@@ -343,13 +354,13 @@ include 'includes/header.php';
                     <h4 style="text-align: center; color: #10b981; margin-bottom: 15px;">Cabine Économique</h4>
                     <?php
                     $rangees_economique = array_filter($sieges, function($siege) {
-                        return $siege['type'] === 'standard' || $siege['type'] === 'premium';
+                        return $siege['classe'] === 'economiques' || $siege['classe'] === 'premiere';
                     });
                     
                     $rangees = [];
                     foreach ($sieges as $siege) {
-                        if ($siege['type'] === 'standard' || $siege['type'] === 'premium') {
-                            $rangees[$siege['rangee']][] = $siege;
+                        if ($siege['classe'] === 'economique' || $siege['classe'] === 'première') {
+                            $rangees[$siege['rang']][] = $siege;
                         }
                     }
                     ksort($rangees);
@@ -364,14 +375,14 @@ include 'includes/header.php';
                         foreach ($colonnes_economique as $col_index => $colonne):
                             $siege_trouve = null;
                             foreach ($sieges_rangee as $siege) {
-                                if ($siege['colonne'] === $colonne) {
+                                if ($siege['position'] === $colonne) {
                                     $siege_trouve = $siege;
                                     break;
                                 }
                             }
                         ?>
-                        <div class="seat-visual <?php echo $siege_trouve ? 'seat-' . $siege_trouve['type'] : 'seat-empty'; ?>" 
-                             title="<?php echo $siege_trouve ? $colonne . $rangee_num . ' - ' . ucfirst($siege_trouve['type']) . ' (+' . $siege_trouve['prix_supplement'] . '€)' : 'Siège non configuré'; ?>">
+                        <div class="seat-visual <?php echo $siege_trouve ? 'seat-' . $siege_trouve['classe'] : 'seat-empty'; ?>" 
+                             title="<?php echo $siege_trouve ? $colonne . $rangee_num . ' - ' . ucfirst($siege_trouve['classe']) . ' (+' . $siege_trouve['supplement_prix'] . '€)' : 'Siège non configuré'; ?>">
                             <?php if ($siege_trouve): ?>
                             <?php echo $colonne; ?>
                             <?php endif; ?>
@@ -392,28 +403,28 @@ include 'includes/header.php';
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th>Rang</th>
                                 <th>Siège</th>
                                 <th>Type</th>
-                                <th>Supplément</th>
+                                <th>Prix</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($sieges as $siege): ?>
                             <tr>
-                                <td><?php echo $siege['id_siege']; ?></td>
+                                <td><?php echo $siege['rang']; ?></td>
                                 <td>
-                                    <strong><?php echo $siege['colonne'] . $siege['rangee']; ?></strong>
+                                    <strong><?php echo $siege['position']; ?></strong>
                                 </td>
                                 <td>
-                                    <span class="status-badge status-<?php echo $siege['type']; ?>">
-                                        <?php echo ucfirst($siege['type']); ?>
+                                    <span class="status-badge status-<?php echo $siege['classe']; ?>">
+                                        <?php echo ucfirst($siege['classe']); ?>
                                     </span>
                                 </td>
                                 <td>
-                                    <?php if ($siege['prix_supplement'] > 0): ?>
-                                    <span class="text-success">+<?php echo number_format($siege['prix_supplement'], 2, ',', ' '); ?>€</span>
+                                    <?php if ($siege['supplement_prix'] > 0): ?>
+                                    <span class="text-success">+<?php echo number_format($siege['supplement_prix'], 2, ',', ' '); ?>€</span>
                                     <?php else: ?>
                                     <span style="color: #94a3b8;">-</span>
                                     <?php endif; ?>
@@ -421,7 +432,7 @@ include 'includes/header.php';
                                 <td>
                                     <div class="action-buttons">
                                         <button class="btn btn-primary btn-sm" title="Modifier" 
-                                                onclick="editSiege(<?php echo $siege['id_siege']; ?>, '<?php echo $siege['type']; ?>', <?php echo $siege['prix_supplement']; ?>)">
+                                                onclick="editSiege(<?php echo $siege['id_siege']; ?>, '<?php echo $siege['classe']; ?>', <?php echo $siege['supplement_prix']; ?>)">
                                             <i class="fas fa-edit"></i>
                                         </button>
                                         <a href="sieges.php?avion_id=<?php echo $avion_id; ?>&delete_siege=<?php echo $siege['id_siege']; ?>" 
