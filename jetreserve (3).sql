@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3306
--- Généré le : dim. 19 oct. 2025 à 18:02
+-- Généré le : lun. 20 oct. 2025 à 04:31
 -- Version du serveur : 5.7.40
 -- Version de PHP : 8.0.26
 
@@ -103,6 +103,35 @@ INSERT INTO `emails` (`id_email`, `id_user`, `sujet`, `contenu`, `type`, `date_e
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `options_bagage`
+--
+
+DROP TABLE IF EXISTS `options_bagage`;
+CREATE TABLE IF NOT EXISTS `options_bagage` (
+  `id_option` int(11) NOT NULL AUTO_INCREMENT,
+  `nom_option` varchar(100) NOT NULL,
+  `description` text,
+  `poids_max` decimal(5,2) DEFAULT NULL,
+  `prix_supplement` decimal(8,2) NOT NULL,
+  `statut` enum('actif','inactif') DEFAULT 'actif',
+  PRIMARY KEY (`id_option`)
+) ENGINE=MyISAM AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
+
+--
+-- Déchargement des données de la table `options_bagage`
+--
+
+INSERT INTO `options_bagage` (`id_option`, `nom_option`, `description`, `poids_max`, `prix_supplement`, `statut`) VALUES
+(1, 'Bagage à main', 'Bagage cabine standard (8kg)', '8.00', '0.00', 'actif'),
+(2, 'Bagage en soute 20kg', 'Bagage en soute jusqu\'à 20kg', '20.00', '25.00', 'actif'),
+(3, 'Bagage en soute 30kg', 'Bagage en soute jusqu\'à 30kg', '30.00', '45.00', 'actif'),
+(4, 'Excédent bagage 5kg', 'Supplément pour 5kg supplémentaires', '5.00', '15.00', 'actif'),
+(5, 'Bagage sport', 'Équipement sportif (ski, golf, etc.)', '30.00', '35.00', 'actif'),
+(6, 'Bagage fragile', 'Articles fragiles - traitement spécial', '20.00', '20.00', 'actif');
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `paiements`
 --
 
@@ -144,7 +173,7 @@ CREATE TABLE IF NOT EXISTS `reservations` (
   PRIMARY KEY (`id_reservation`),
   KEY `id_user` (`id_user`),
   KEY `id_vol` (`id_vol`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=latin1;
 
 --
 -- Déchargement des données de la table `reservations`
@@ -152,7 +181,30 @@ CREATE TABLE IF NOT EXISTS `reservations` (
 
 INSERT INTO `reservations` (`id_reservation`, `id_user`, `id_vol`, `statut`, `date_reservation`, `nombre_passagers`, `prix_total`) VALUES
 (1, 1, 1, 'confirmé', '2025-10-07 22:26:46', 1, '450.00'),
-(2, 2, 2, 'en attente', '2025-10-07 22:26:46', 2, '1400.00');
+(2, 2, 2, 'en attente', '2025-10-07 22:26:46', 2, '1400.00'),
+(3, 1, 1, 'en attente', '2025-10-19 18:28:24', 2, '900.00'),
+(4, 1, 1, 'en attente', '2025-10-19 19:29:55', 1, '450.00'),
+(5, 1, 1, 'en attente', '2025-10-20 02:57:42', 1, '650.00'),
+(6, 1, 1, 'en attente', '2025-10-20 03:01:04', 1, '550.00'),
+(7, 1, 1, 'en attente', '2025-10-20 03:15:12', 1, '650.00');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `reservation_bagages`
+--
+
+DROP TABLE IF EXISTS `reservation_bagages`;
+CREATE TABLE IF NOT EXISTS `reservation_bagages` (
+  `id_reservation_bagage` int(11) NOT NULL AUTO_INCREMENT,
+  `id_reservation` int(11) DEFAULT NULL,
+  `id_option` int(11) DEFAULT NULL,
+  `quantite` int(11) DEFAULT '1',
+  `prix_applique` decimal(8,2) DEFAULT NULL,
+  PRIMARY KEY (`id_reservation_bagage`),
+  KEY `id_reservation` (`id_reservation`),
+  KEY `id_option` (`id_option`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -170,7 +222,7 @@ CREATE TABLE IF NOT EXISTS `reservation_sieges` (
   PRIMARY KEY (`id`),
   KEY `id_reservation` (`id_reservation`),
   KEY `id_siege` (`id_siege`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=latin1;
 
 --
 -- Déchargement des données de la table `reservation_sieges`
@@ -179,7 +231,13 @@ CREATE TABLE IF NOT EXISTS `reservation_sieges` (
 INSERT INTO `reservation_sieges` (`id`, `id_reservation`, `id_siege`, `prix_paye`, `created_at`) VALUES
 (1, 1, 45, '450.00', '2025-10-07 22:26:46'),
 (2, 2, 78, '700.00', '2025-10-07 22:26:46'),
-(3, 2, 79, '700.00', '2025-10-07 22:26:46');
+(3, 2, 79, '700.00', '2025-10-07 22:26:46'),
+(4, 3, 25, '450.00', '2025-10-19 18:28:24'),
+(5, 3, 26, '450.00', '2025-10-19 18:28:24'),
+(6, 4, 115, '450.00', '2025-10-19 19:29:55'),
+(7, 5, 1, '650.00', '2025-10-20 02:57:42'),
+(8, 6, 8, '550.00', '2025-10-20 03:01:04'),
+(9, 7, 2, '650.00', '2025-10-20 03:15:12');
 
 -- --------------------------------------------------------
 
@@ -413,13 +471,13 @@ CREATE TABLE IF NOT EXISTS `users` (
 --
 
 INSERT INTO `users` (`id_user`, `nom`, `prenom`, `email`, `telephone`, `password`, `role`, `statut`, `date_creation`) VALUES
-(1, 'Salami', 'Awanat', 'awanatsalami.afo@gmail.com', '0700000001', 'password2005', 'client', 'actif', '2025-10-07 22:26:46'),
+(1, 'Salami', 'Awanat', 'awanatsalami.afo@gmail.com', '0700000001', '$2y$10$bWSFnsIG.6dgAd7YVa/YCO.MWs6ZQD8f3sy1gtoXeEWDeV6YtgKru', 'client', 'actif', '2025-10-07 22:26:46'),
 (2, 'Folashade', 'Arike', 'arike@gmail.com', '0700000002', 'password123', 'client', 'actif', '2025-10-07 22:26:46'),
 (3, 'Radji', 'Sad', 'admin@test.com', '0700000000', 'adminpass2003', 'admin', 'actif', '2025-10-07 22:26:46'),
 (4, 'Agbalessi', 'Ruth', 'agbalessifloriane69@gmail.com', '0100000202', '1234567', 'admin', 'actif', '2025-10-11 04:45:37'),
 (5, 'Degny', 'Alfred', 'alfred@gmail.com', '0102030407', '1234567', 'client', 'actif', '2025-10-11 05:12:38'),
 (6, 'Kouamé', 'Mélina', 'mel@gmail.com', NULL, '1234567', 'client', 'actif', '2025-10-11 05:22:34'),
-(7, 'Admin', 'System', 'admin@jetreserve.com', NULL, 'admin123', 'admin', 'actif', '2025-10-17 23:48:33'),
+(7, 'Admin', 'System', 'admin@jetreserve.com', NULL, '$2y$10$nctt3DRye32/G/YQGz/gyujYL6riTfV9./PfWTHcSzCR7b0SMNGPa', 'admin', 'actif', '2025-10-17 23:48:33'),
 (8, 'Banga', 'Christ', 'awanatsalami@gmail.com', NULL, '$2y$10$59yObNnnMOfLmgGrmPZxAuFmcBFwCD2g8QDzJ7GMj63pHThiLCeCa', 'client', 'actif', '2025-10-19 16:47:52');
 
 -- --------------------------------------------------------
@@ -452,7 +510,7 @@ CREATE TABLE IF NOT EXISTS `vols` (
 --
 
 INSERT INTO `vols` (`id_vol`, `id_compagnie`, `id_avion`, `depart`, `arrivee`, `date_depart`, `date_arrivee`, `prix`, `escales`, `classe`, `numero_vol`, `places_disponibles`) VALUES
-(1, 1, 1, 'Paris', 'Abidjan', '2025-11-12 08:00:00', '2025-11-15 14:00:00', '450.00', 0, 'économique', 'AF123', 178),
+(1, 1, 1, 'Paris', 'Abidjan', '2025-11-12 08:00:00', '2025-11-15 14:00:00', '450.00', 0, 'économique', 'AF123', 172),
 (2, 2, 2, 'Dubaï', 'Abidjan', '2025-11-20 22:00:00', '2025-11-21 06:00:00', '700.00', 1, 'affaires', 'EK456', 394),
 (3, 3, 3, 'Istanbul', 'Paris', '2025-12-05 10:00:00', '2025-12-05 14:00:00', '350.00', 0, 'économique', 'TK789', 218);
 
