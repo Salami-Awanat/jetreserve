@@ -8,7 +8,7 @@ if (!isset($_SESSION['id_user'])) {
     exit;
 }
 
-// Vérifier l'ID de réservation
+// Vérifier l'ID de réservation (logique initiale stricte)
 if (!isset($_GET['id_reservation'])) {
     header('Location: index.php');
     exit;
@@ -42,8 +42,8 @@ try {
         throw new Exception("Réservation non trouvée");
     }
 
-    // Vérifier le statut du paiement (accepter aussi "réussi" inséré à la réservation)
-    $paiement_effectue = in_array($reservation['statut_paiement'], ['réussi', 'payé', 'complet'], true);
+    // Vérifier le statut du paiement (logique initiale)
+    $paiement_effectue = ($reservation['statut_paiement'] === 'payé' || $reservation['statut_paiement'] === 'complet');
     $statut_paiement = $reservation['statut_paiement'] ?? 'en_attente';
 
     // Récupérer les sièges réservés
@@ -645,7 +645,7 @@ $qr_code_url = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" 
                         Veuillez finaliser le paiement pour garantir votre vol.
                     </p>
                     <div class="action-buttons">
-                        <a href="paiement.php?id_reservation=<?php echo $id_reservation; ?>" class="btn btn-warning">
+                        <a href="paiement.php?reservation_id=<?php echo $id_reservation; ?>" class="btn btn-warning">
                             <i class="fas fa-credit-card"></i> Procéder au paiement
                         </a>
                     </div>
