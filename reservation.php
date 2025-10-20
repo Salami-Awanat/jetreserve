@@ -1,4 +1,5 @@
 <?php
+<<<<<<< Updated upstream
 // Activer l'affichage des erreurs pour le débogage
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -10,8 +11,17 @@ ini_set('max_execution_time', 60);
 // DÉBUT DU BUFFER
 ob_start();
 
+=======
+ob_start();
+>>>>>>> Stashed changes
 require_once 'includes/db.php';
 session_start();
+
+// Debug optionnel via ?debug=1
+if (isset($_GET['debug'])) {
+    ini_set('display_errors', '1');
+    error_reporting(E_ALL);
+}
 
 // Vérifier si l'utilisateur est connecté
 if (!isset($_SESSION['id_user'])) {
@@ -249,6 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
             // VALIDATION DE LA TRANSACTION
             $pdo->commit();
             
+<<<<<<< Updated upstream
             error_log("=== RÉSERVATION RÉUSSIE ===");
             
             // VIDER LE BUFFER ET REDIRIGER
@@ -260,6 +271,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
             
         } catch (Exception $e) {
             // ANNULATION DE LA TRANSACTION EN CAS D'ERREUR
+=======
+// 1. Nettoyer la mémoire tampon pour s'assurer qu'aucun contenu HTML ou
+//    erreur n'est en attente avant l'envoi du script.
+ob_clean(); 
+
+// 2. Envoyer un script JavaScript pour désactiver l'événement de blocage
+//    avant de tenter la redirection.
+echo '<script type="text/javascript">';
+echo '  // Désactive l\'événement onbeforeunload (responsable du "Voulez-vous quitter ?")';
+echo '  if (window.onbeforeunload !== null) {';
+echo '    window.onbeforeunload = null;'; 
+echo '  }';
+
+// 3. Effectuer la redirection via JavaScript (plus fiable et immédiate ici)
+echo '  window.location.href = "/confirmation_reservation.php?id_reservation=' . $id_reservation . '";';
+echo '</script>';
+
+// 4. Arrêter l'exécution du script PHP
+exit;
+
+
+        } catch (PDOException $e) {
+>>>>>>> Stashed changes
             $pdo->rollBack();
             $erreur_message = "Erreur lors de la réservation: " . $e->getMessage();
             $erreurs[] = $erreur_message;
@@ -275,7 +309,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
 // Si on arrive ici, c'est qu'on affiche le formulaire ou qu'il y a une erreur
 ob_end_flush();
 ?>
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -1188,6 +1221,7 @@ ob_end_flush();
     </header>
 
     <div class="container">
+<<<<<<< Updated upstream
         <div class="reservation-layout">
             <!-- Colonne principale -->
             <div class="reservation-main">
@@ -1197,6 +1231,108 @@ ob_end_flush();
                         <i class="fas fa-plane-departure"></i> Finalisez votre réservation
                     </h1>
                     <p>Votre vol <?php echo htmlspecialchars($vol['depart']); ?> → <?php echo htmlspecialchars($vol['arrivee']); ?> du <?php echo date('d/m/Y', strtotime($vol['date_depart'])); ?></p>
+=======
+        <!-- Barre de progression -->
+        <div class="progress-steps">
+            <div class="step completed">
+                <div class="step-number"><i class="fas fa-check"></i></div>
+                <div class="step-label">Recherche</div>
+            </div>
+            <div class="step completed">
+                <div class="step-number"><i class="fas fa-check"></i></div>
+                <div class="step-label">Sélection</div>
+            </div>
+            <div class="step active">
+                <div class="step-number">3</div>
+                <div class="step-label">Réservation</div>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-label">Confirmation</div>
+            </div>
+        </div>
+
+        <div class="reservation-container">
+            <!-- En-tête -->
+            <div class="reservation-header">
+                <h1 class="reservation-title"><i class="fas fa-plane"></i> Réservation de vol</h1>
+                <p>Finalisez votre réservation en choisissant vos sièges et options</p>
+                
+                <!-- Timer de réservation -->
+                <div class="timer">
+                    <i class="fas fa-clock"></i>
+                    <span id="reservation-timer">15:00</span>
+                </div>
+            </div>
+            
+            <!-- Résumé du vol -->
+            <div class="vol-resume">
+                <h2 class="section-title"><i class="fas fa-info-circle"></i> Résumé du vol</h2>
+                <div class="vol-info-grid">
+                    <div class="info-card">
+                        <div class="info-label"><i class="fas fa-route"></i> Itinéraire</div>
+                        <div class="info-value"><?php echo htmlspecialchars($vol['depart']); ?> → <?php echo htmlspecialchars($vol['arrivee']); ?></div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label"><i class="fas fa-calendar-alt"></i> Date et heure</div>
+                        <div class="info-value"><?php echo date('d/m/Y H:i', strtotime($vol['date_depart'])); ?></div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label"><i class="fas fa-building"></i> Compagnie</div>
+                        <div class="info-value"><?php echo htmlspecialchars($vol['nom_compagnie']); ?></div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label"><i class="fas fa-star"></i> Classe</div>
+                        <div class="info-value"><?php echo htmlspecialchars($vol['classe']); ?></div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Important :</strong> Vous avez 15 minutes pour compléter votre réservation. Passé ce délai, les sièges sélectionnés seront libérés.
+                </div>
+            </div>
+            
+            <!-- Formulaire de réservation -->
+            <form method="POST" class="reservation-form" id="reservationForm">
+                <?php if (isset($erreur)): ?>
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        <div><?php echo $erreur; ?></div>
+                    </div>
+                <?php endif; ?>
+                <?php if (isset($_GET['debug'])): ?>
+                    <div class="alert alert-info" style="max-height:300px; overflow:auto;">
+                        <strong>Debug:</strong>
+                        <div style="font-family:monospace; font-size:12px; white-space:pre-wrap;">
+POST = <?php echo htmlspecialchars(print_r($_POST, true)); ?>
+
+ERREURS = <?php echo htmlspecialchars(print_r(isset($erreurs) ? $erreurs : [], true)); ?>
+
+ID_RESERVATION = <?php echo isset($id_reservation) ? (int)$id_reservation : 'null'; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+                
+                <!-- Sélection du nombre de passagers -->
+                <div class="form-section">
+                    <h3 class="section-title"><i class="fas fa-users"></i> Nombre de passagers</h3>
+                    <div class="form-group">
+                        <label for="nombre_passagers">Nombre de passagers *</label>
+                        <select name="nombre_passagers" id="nombre_passagers" class="form-control" required>
+                            <?php for ($i = 1; $i <= min(10, $vol['places_disponibles']); $i++): ?>
+                                <option value="<?php echo $i; ?>" <?php echo isset($_POST['nombre_passagers']) && $_POST['nombre_passagers'] == $i ? 'selected' : ''; ?>>
+                                    <?php echo $i; ?> passager(s) - <?php echo number_format($vol['prix'] * $i, 2, ',', ' '); ?>€
+                                </option>
+                            <?php endfor; ?>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Sélection des sièges -->
+                <div class="form-section">
+                    <h3 class="section-title"><i class="fas fa-chair"></i> Choix des sièges</h3>
+>>>>>>> Stashed changes
                     
                     <!-- Barre de progression -->
                     <div class="progress-steps">
