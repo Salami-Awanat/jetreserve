@@ -61,12 +61,12 @@
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                                 <div>
                                     <label>Date de départ *</label>
-                                    <input type="datetime-local" name="date_depart" value="<?php echo $vol ? str_replace(' ', 'T', $vol['date_depart']) : ''; ?>" required 
+                                    <input type="datetime-local" name="date_depart" value="<?php echo $vol ? date('Y-m-d\TH:i', strtotime($vol['date_depart'])) : ''; ?>" required 
                                            class="form-control" style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;">
                                 </div>
                                 <div>
                                     <label>Date d'arrivée *</label>
-                                    <input type="datetime-local" name="date_arrivee" value="<?php echo $vol ? str_replace(' ', 'T', $vol['date_arrivee']) : ''; ?>" required 
+                                    <input type="datetime-local" name="date_arrivee" value="<?php echo $vol ? date('Y-m-d\TH:i', strtotime($vol['date_arrivee'])) : ''; ?>" required 
                                            class="form-control" style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;">
                                 </div>
                             </div>
@@ -142,11 +142,26 @@
         // Traitement du formulaire
         if (isset($_POST['save_vol'])) {
             try {
+                // Formatage des dates pour MySQL
+                $date_depart = $_POST['date_depart'] ? str_replace('T', ' ', $_POST['date_depart']) : null;
+                $date_arrivee = $_POST['date_arrivee'] ? str_replace('T', ' ', $_POST['date_arrivee']) : null;
+                
+                // Vérification de la validité des dates
+                if (!$date_depart || !strtotime($date_depart)) {
+                    echo "<div class='alert alert-danger'>La date de départ n'est pas valide.</div>";
+                    exit;
+                }
+                
+                if (!$date_arrivee || !strtotime($date_arrivee)) {
+                    echo "<div class='alert alert-danger'>La date d'arrivée n'est pas valide.</div>";
+                    exit;
+                }
+                
                 $data = [
                     'depart' => $_POST['depart'],
                     'arrivee' => $_POST['arrivee'],
-                    'date_depart' => $_POST['date_depart'],
-                    'date_arrivee' => $_POST['date_arrivee'],
+                    'date_depart' => $date_depart,
+                    'date_arrivee' => $date_arrivee,
                     'prix' => $_POST['prix'],
                     'id_compagnie' => $_POST['id_compagnie'],
                     'id_avion' => $_POST['id_avion'],
