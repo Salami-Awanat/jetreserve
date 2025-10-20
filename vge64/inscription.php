@@ -6,6 +6,7 @@ if (isset($_POST['inscrire'])) {
     $nom = trim($_POST['nom']);
     $prenom = trim($_POST['prenom']);
     $email = trim($_POST['email']);
+    $telephone = trim($_POST['telephone']);
     $mdp = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
 
@@ -30,8 +31,8 @@ if (isset($_POST['inscrire'])) {
                 $mdp_hash = password_hash($mdp, PASSWORD_DEFAULT);
                 
                 // Insertion avec le mot de passe haché
-                $insert = $pdo->prepare("INSERT INTO users (nom, prenom, email, password, statut) VALUES (?, ?, ?, ?, 'actif')");
-                $insert->execute([$nom, $prenom, $email, $mdp_hash]);
+                $insert = $pdo->prepare("INSERT INTO users (nom, prenom, email, telephone, password, statut) VALUES (?, ?, ?, ?, ?, 'actif')");
+                $insert->execute([$nom, $prenom, $email, $telephone, $mdp_hash]);
                 
                 $message = "✅ Inscription réussie ! Vous pouvez maintenant vous connecter.";
             }
@@ -152,6 +153,16 @@ if (isset($_POST['inscrire'])) {
                             <i class="fas fa-envelope"></i>
                         </span>
                         <input type="email" id="email" name="email" placeholder="exemple@email.com" value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" required>
+                    </div>
+                </div>
+
+                 <div class="mb-3">
+                    <label for="telephone">Téléphone :</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-phone"></i>
+                        </span>
+                        <input type="telephone" id="telephone" name="telephone" placeholder="ex: 0712345678" value="<?php echo isset($_POST['telephone']) ? htmlspecialchars($_POST['telephone']) : ''; ?>" required>
                     </div>
                 </div>
 
