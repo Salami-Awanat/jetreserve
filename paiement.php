@@ -1,6 +1,19 @@
 <?php
+// Démarrer la session avec des paramètres optimisés
 session_start();
+
+// Désactiver la mise en cache pour éviter les problèmes de redirection
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+
 require_once 'includes/db.php';
+
+// Ajouter des logs pour déboguer
+error_log("=== DÉBUT DE LA PAGE PAIEMENT ===" . date('Y-m-d H:i:s') . " ====");
+error_log("URL complète: " . $_SERVER['REQUEST_URI']);
+error_log("Méthode de requête: " . $_SERVER['REQUEST_METHOD']);
+error_log("Données GET: " . print_r($_GET, true));
 
 // Vérifier si l'ID de réservation est présent
 if (!isset($_GET['reservation_id'])) {
@@ -32,7 +45,14 @@ try {
     
     // Si la réservation est déjà confirmée, rediriger vers confirmation
     if ($reservation['statut'] === 'confirmé') {
-        header('Location: confirmation.php?id_reservation=' . $reservation_id);
+        error_log("Réservation déjà confirmée - Redirection vers confirmation.php");
+        
+        // Forcer la fin de la session de sortie pour s'assurer que les en-têtes sont envoyés
+        session_write_close();
+        ob_end_flush();
+        flush();
+        
+        header('Location: confirmation.php?reservation_id=' . $reservation_id);
         exit;
     }
     
@@ -78,20 +98,20 @@ $total_price = floatval($reservation['prix_total']);
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Poppins', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             color: var(--dark);
         }
-        
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 0 20px;
         }
-        
+
         /* Header */
         header {
             background: rgba(255, 255, 255, 0.95);
@@ -102,13 +122,13 @@ $total_price = floatval($reservation['prix_total']);
             top: 0;
             z-index: 1000;
         }
-        
+
         .header-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        
+
         .logo {
             font-size: 28px;
             font-weight: 700;
@@ -118,7 +138,7 @@ $total_price = floatval($reservation['prix_total']);
             align-items: center;
             gap: 10px;
         }
-        
+
         .logo span {
             color: var(--danger);
         }
@@ -211,13 +231,13 @@ $total_price = floatval($reservation['prix_total']);
             gap: 30px;
             margin: 2rem auto;
         }
-        
+
         @media (max-width: 968px) {
             .payment-container {
                 grid-template-columns: 1fr;
             }
         }
-        
+
         /* Payment Form */
         .payment-form {
             background: white;
@@ -239,18 +259,18 @@ $total_price = floatval($reservation['prix_total']);
             align-items: center;
             gap: 0.75rem;
         }
-        
+
         .form-group {
             margin-bottom: 1.5rem;
         }
-        
+
         label {
             display: block;
             margin-bottom: 0.5rem;
             font-weight: 500;
             color: var(--dark);
         }
-        
+
         .form-control {
             width: 100%;
             padding: 12px 15px;
@@ -260,13 +280,13 @@ $total_price = floatval($reservation['prix_total']);
             transition: all 0.3s ease;
             font-family: 'Poppins', sans-serif;
         }
-        
+
         .form-control:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(0, 84, 164, 0.1);
         }
-        
+
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -280,7 +300,7 @@ $total_price = floatval($reservation['prix_total']);
             gap: 1rem;
             margin-bottom: 2rem;
         }
-        
+
         .payment-method {
             border: 2px solid #e9ecef;
             border-radius: 10px;
@@ -290,24 +310,24 @@ $total_price = floatval($reservation['prix_total']);
             transition: all 0.3s ease;
             background: white;
         }
-        
+
         .payment-method:hover {
             border-color: var(--primary);
             transform: translateY(-2px);
         }
-        
+
         .payment-method.selected {
             border-color: var(--primary);
             background: linear-gradient(135deg, #f0f9ff 0%, #e1f5fe 100%);
             box-shadow: 0 5px 15px rgba(0, 84, 164, 0.2);
         }
-        
+
         .payment-method i {
             font-size: 2rem;
             margin-bottom: 0.75rem;
             color: var(--secondary);
         }
-        
+
         .payment-method.selected i {
             color: var(--primary);
         }
@@ -517,21 +537,21 @@ $total_price = floatval($reservation['prix_total']);
                 <div class="step completed">
                     <div class="step-number"><i class="fas fa-check"></i></div>
                     <div class="step-label">Recherche</div>
-                </div>
+            </div>
                 <div class="step completed">
                     <div class="step-number"><i class="fas fa-check"></i></div>
                     <div class="step-label">Sélection</div>
-                </div>
+            </div>
                 <div class="step completed">
                     <div class="step-number"><i class="fas fa-check"></i></div>
                     <div class="step-label">Réservation</div>
-                </div>
+            </div>
                 <div class="step active">
-                    <div class="step-number">4</div>
+                <div class="step-number">4</div>
                     <div class="step-label">Paiement</div>
-                </div>
+            </div>
                 <div class="step">
-                    <div class="step-number">5</div>
+                <div class="step-number">5</div>
                     <div class="step-label">Confirmation</div>
                 </div>
             </div>
@@ -563,15 +583,15 @@ $total_price = floatval($reservation['prix_total']);
                     
                     <div class="form-section">
                         <h3 style="margin-bottom: 1rem; color: var(--dark);">Moyen de paiement</h3>
-                        <div class="payment-methods">
-                            <div class="payment-method selected" data-method="carte">
-                                <i class="fas fa-credit-card"></i>
-                                <div>Carte bancaire</div>
-                            </div>
-                            <div class="payment-method" data-method="paypal">
-                                <i class="fab fa-paypal"></i>
-                                <div>PayPal</div>
-                            </div>
+                    <div class="payment-methods">
+                        <div class="payment-method selected" data-method="carte">
+                            <i class="fas fa-credit-card"></i>
+                            <div>Carte bancaire</div>
+                        </div>
+                        <div class="payment-method" data-method="paypal">
+                            <i class="fab fa-paypal"></i>
+                            <div>PayPal</div>
+                        </div>
                             <div class="payment-method" data-method="applepay">
                                 <i class="fab fa-apple-pay"></i>
                                 <div>Apple Pay</div>
@@ -659,14 +679,14 @@ $total_price = floatval($reservation['prix_total']);
                         <div style="margin-top: 1rem;">
                             <div style="font-size: 0.9rem; color: var(--secondary); margin-bottom: 0.5rem;">Sièges réservés :</div>
                             <div class="seats-list">
-                                <?php foreach ($sieges as $siege): ?>
+                            <?php foreach ($sieges as $siege): ?>
                                     <div class="seat-tag">
                                         <?php echo $siege['position'] . $siege['rang']; ?>
                                         <?php if ($siege['supplement_prix'] > 0): ?>
                                             <small style="font-size: 0.7rem;">(+<?php echo $siege['supplement_prix']; ?>€)</small>
                                         <?php endif; ?>
                                     </div>
-                                <?php endforeach; ?>
+                            <?php endforeach; ?>
                             </div>
                         </div>
                         <?php endif; ?>
@@ -726,12 +746,24 @@ $total_price = floatval($reservation['prix_total']);
         });
 
         // Validation renforcée du formulaire
+        let formSubmitted = false;
         document.getElementById('paymentForm').addEventListener('submit', function(e) {
+            // Empêcher les soumissions multiples
+            if (formSubmitted) {
+                e.preventDefault();
+                console.log("Tentative de soumission multiple bloquée");
+                return false;
+            }
+            
             e.preventDefault();
             
             if (!validatePaymentForm()) {
                 return false;
             }
+            
+            // Marquer le formulaire comme soumis
+            formSubmitted = true;
+            this.setAttribute('data-submitting', 'true');
             
             // Simulation de traitement
             const submitBtn = document.getElementById('submitBtn');
@@ -741,10 +773,48 @@ $total_price = floatval($reservation['prix_total']);
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Traitement en cours...';
             loading.style.display = 'block';
             
-            // Soumission réelle après un petit délai pour l'effet
-            setTimeout(() => {
-                this.submit();
-            }, 1500);
+            // Désactiver tous les événements qui pourraient interférer
+            window.onbeforeunload = null;
+            
+            // Désactiver tous les champs du formulaire pour éviter les modifications pendant la soumission
+            Array.from(this.elements).forEach(element => {
+                element.disabled = true;
+            });
+            
+            // Soumission directe sans setTimeout pour éviter les problèmes
+            try {
+                console.log('Soumission du formulaire de paiement');
+                
+                // Créer un indicateur visuel de chargement plus visible
+                const loadingOverlay = document.createElement('div');
+                loadingOverlay.style.position = 'fixed';
+                loadingOverlay.style.top = '0';
+                loadingOverlay.style.left = '0';
+                loadingOverlay.style.width = '100%';
+                loadingOverlay.style.height = '100%';
+                loadingOverlay.style.backgroundColor = 'rgba(0,0,0,0.7)';
+                loadingOverlay.style.zIndex = '9999';
+                loadingOverlay.style.display = 'flex';
+                loadingOverlay.style.justifyContent = 'center';
+                loadingOverlay.style.alignItems = 'center';
+                loadingOverlay.style.color = 'white';
+                loadingOverlay.innerHTML = '<div style="text-align:center;"><div class="spinner-border text-light" style="width: 3rem; height: 3rem;" role="status"></div><p style="margin-top:10px;">Traitement de votre paiement en cours...</p></div>';
+                document.body.appendChild(loadingOverlay);
+                
+                // Soumettre le formulaire après un court délai pour permettre l'affichage de l'overlay
+                setTimeout(() => {
+                    this.submit();
+                    console.log('Formulaire soumis avec succès');
+                }, 100);
+            } catch (error) {
+                console.error('Erreur lors de la soumission:', error);
+                // En cas d'erreur, réactiver le formulaire
+                formSubmitted = false;
+                this.removeAttribute('data-submitting');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Payer';
+                loading.style.display = 'none';
+            }
         });
 
         function validatePaymentForm() {

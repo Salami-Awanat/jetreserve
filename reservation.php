@@ -7,13 +7,26 @@ ini_set('display_errors', 1);
 set_time_limit(60);
 ini_set('max_execution_time', 60);
 
+// Ajouter des logs pour déboguer
+error_log("=== DÉBUT DE LA PAGE RESERVATION ===" . date('Y-m-d H:i:s') . " ====");
+error_log("URL complète: " . $_SERVER['REQUEST_URI']);
+error_log("Méthode de requête: " . $_SERVER['REQUEST_METHOD']);
+error_log("Données POST: " . (empty($_POST) ? 'vide' : 'présentes'));
+
 // DÉBUT DU BUFFER AMÉLIORÉ
 if (ob_get_level() == 0) {
     ob_start();
 }
 
-require_once 'includes/db.php';
+// Démarrer la session avec des paramètres optimisés
 session_start();
+
+// Désactiver la mise en cache pour éviter les problèmes de redirection
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+
+require_once 'includes/db.php';
 
 // Vérifier si l'utilisateur est connecté
 if (!isset($_SESSION['id_user'])) {
@@ -21,7 +34,8 @@ if (!isset($_SESSION['id_user'])) {
     while (ob_get_level() > 0) {
         ob_end_clean();
     }
-    header('Location: vge64/connexion.php?redirect=' . urlencode($_SERVER['REQUEST_URI']));
+    $redirect = isset($_SERVER['REQUEST_URI']) ? urlencode($_SERVER['REQUEST_URI']) : '';
+    header('Location: vge64/connexion.php?redirect=' . $redirect);
     exit;
 }
 
@@ -270,7 +284,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
             }
             
             // Rediriger vers la page de confirmation
-            header('Location: paiement.php?id_reservation=' . $id_reservation);
+            error_log("Redirection vers paiement.php avec reservation_id=$id_reservation");
+            header('Location: paiement.php?reservation_id=' . $id_reservation);
             exit;
             
         } catch (Exception $e) {
@@ -1571,7 +1586,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
         const timerInterval = setInterval(updateTimer, 1000);
 
         // Gestion de la soumission du formulaire
+        let formSubmitted = false;
         document.getElementById('reservationForm').addEventListener('submit', function(e) {
+            // Empêcher les soumissions multiples
+            if (formSubmitted) {
+                console.log("Tentative de soumission multiple bloquée");
+                e.preventDefault();
+                return false;
+            }
+            
             const nbPassagers = parseInt(document.getElementById('nombre_passagers').value);
             const siegesSelectionnes = document.querySelectorAll('input[name="sieges[]"]:checked');
             
@@ -1581,12 +1604,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
                 return;
             }
             
+            // Marquer le formulaire comme soumis
+            formSubmitted = true;
+            
             // Afficher le loading
             document.getElementById('loading').style.display = 'block';
             document.getElementById('submit-btn').disabled = true;
             
             // Arrêter le timer
             clearInterval(timerInterval);
+            
+            // Désactiver tous les événements qui pourraient interférer
+            window.onbeforeunload = null;
+            
+            // Désactiver tous les champs du formulaire pour éviter les modifications pendant la soumission
+            Array.from(this.elements).forEach(element => {
+                if (element.id !== 'submit-btn') {
+                    element.disabled = true;
+                }
+            });
+            
+            // Soumission directe sans setTimeout pour éviter les problèmes
+            try {
+                console.log('Soumission du formulaire de réservation');
+                
+                // Soumission immédiate sans overlay ni délai
+                this.submit();
+            } catch (error) {
+                console.error('Erreur lors de la soumission:', error);
+                // En cas d'erreur, réactiver le formulaire
+                formSubmitted = false;
+                Array.from(this.elements).forEach(element => {
+                    element.disabled = false;
+                });
+                document.getElementById('submit-btn').disabled = false;
+                document.getElementById('loading').style.display = 'none';
+            }
         });
 
         // Initialisation
