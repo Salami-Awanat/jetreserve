@@ -21,12 +21,25 @@ try {
             WHERE r.id_reservation = ? AND r.id_user = ? AND r.statut = 'en attente'";
     
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$reservation_id, $_SESSION['user_id']]);
+    $stmt->execute([$reservation_id, $_SESSION['id_user']]);
     $reservation = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$reservation) {
-        header('Location: index.php?error=reservation_non_trouvee');
-        exit;
+        // Assouplir le statut: accepter aussi 'confirmé' (cas réservation déjà confirmée)
+        $sql2 = "SELECT r.*, v.depart, v.arrivee, v.date_depart, v.date_arrivee, 
+                        c.nom_compagnie, c.code_compagnie, a.modele as avion_modele
+                 FROM reservations r
+                 JOIN vols v ON r.id_vol = v.id_vol
+                 JOIN compagnies c ON v.id_compagnie = c.id_compagnie
+                 JOIN avions a ON v.id_avion = a.id_avion
+                 WHERE r.id_reservation = ? AND r.id_user = ? AND r.statut IN ('en attente', 'confirmé')";
+        $stmt2 = $pdo->prepare($sql2);
+        $stmt2->execute([$reservation_id, $_SESSION['id_user']]);
+        $reservation = $stmt2->fetch(PDO::FETCH_ASSOC);
+        if (!$reservation) {
+            header('Location: index.php?error=reservation_non_trouvee');
+            exit;
+        }
     }
     
 } catch (PDOException $e) {

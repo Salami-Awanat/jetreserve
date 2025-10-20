@@ -8,23 +8,22 @@ if (!isset($_SESSION['id_user'])) {
     exit;
 }
 
-// Vérifier l'ID de réservation
+// Vérifier l'ID de réservation (logique initiale stricte)
 if (!isset($_GET['id_reservation'])) {
     header('Location: index.php');
     exit;
-    
 }
 
 $id_reservation = intval($_GET['id_reservation']);
 
 // Récupérer les détails complets de la réservation
 try {
-    // Détails de base de la réservation
+    // Détails de base de la réservation - CORRIGÉ
     $sql = "
-        SELECT r.*, v.depart, v.arrivee, v.date_depart, v.date_arrivee, v.duree_vol,
-               c.nom_compagnie, c.code_compagnie, v.numero_vol, v.porte_embarquement,
-               a.modele as avion_modele, a.configuration_sieges,
-               p.date_paiement, p.mode_paiement,
+        SELECT r.*, v.depart, v.arrivee, v.date_depart, v.date_arrivee, v.prix as prix_vol,
+               c.nom_compagnie, c.code_compagnie, v.numero_vol,
+               a.modele as avion_modele,
+               p.date_paiement, p.mode_paiement, p.statut as statut_paiement,
                u.prenom, u.nom, u.email, u.telephone
         FROM reservations r
         JOIN vols v ON r.id_vol = v.id_vol
@@ -42,6 +41,10 @@ try {
     if (!$reservation) {
         throw new Exception("Réservation non trouvée");
     }
+
+    // Vérifier le statut du paiement (logique initiale)
+    $paiement_effectue = ($reservation['statut_paiement'] === 'payé' || $reservation['statut_paiement'] === 'complet');
+    $statut_paiement = $reservation['statut_paiement'] ?? 'en_attente';
 
     // Récupérer les sièges réservés
     $sql_sieges = "
@@ -66,8 +69,8 @@ try {
     $stmt_bagages->execute([$id_reservation]);
     $bagages = $stmt_bagages->fetchAll(PDO::FETCH_ASSOC);
 
-    // Calculer le détail du prix
-    $prix_base = $reservation['prix_total'] - 34; // Retirer frais fixes
+    // Calculer le détail du prix - CORRIGÉ
+    $prix_base_vol = $reservation['prix_vol'] * $reservation['nombre_passagers'];
     $supplements_sieges = 0;
     foreach ($sieges as $siege) {
         $supplements_sieges += $siege['supplement_prix'];
@@ -77,25 +80,29 @@ try {
         $supplements_bagages += $bagage['prix_applique'] * $bagage['quantite'];
     }
 
+    // Calculer la durée du vol
+    $date_depart = new DateTime($reservation['date_depart']);
+    $date_arrivee = new DateTime($reservation['date_arrivee']);
+    $interval = $date_depart->diff($date_arrivee);
+    $duree_vol = $interval->format('%hh %imin');
+
+    // Déterminer la porte d'embarquement (aléatoire pour l'exemple)
+    $portes = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+    $porte_embarquement = $portes[array_rand($portes)];
+
 } catch (Exception $e) {
     error_log("Erreur confirmation réservation: " . $e->getMessage());
     header('Location: index.php?error=reservation_not_found');
     exit;
 }
 
-// Générer un code QR factice (en production, utiliser un service comme Google Charts)
-$qr_code_url = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" . 
-               urlencode("JetReserve|REF:" . $id_reservation . "|" . $reservation['depart'] . "-" . $reservation['arrivee']);
+// Générer un code QR factice
+$qr_data = "JetReserve|REF:" . $id_reservation . "|" . 
+           $reservation['depart'] . "-" . $reservation['arrivee'] . "|" .
+           date('Y-m-d', strtotime($reservation['date_depart']));
+$qr_code_url = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" . urlencode($qr_data);
 
-// Marquer la réservation comme vue
-try {
-    $sql_update = "UPDATE reservations SET date_visualisation = NOW() WHERE id_reservation = ?";
-    $stmt_update = $pdo->prepare($sql_update);
-    $stmt_update->execute([$id_reservation]);
-} catch (Exception $e) {
-    // Ne pas bloquer l'affichage en cas d'erreur mineure
-    error_log("Erreur mise à jour visualisation: " . $e->getMessage());
-}
+// Pas de mise à jour date_visualisation car la colonne n'existe pas
 ?>
 
 <!DOCTYPE html>
@@ -429,6 +436,12 @@ try {
             box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
         }
         
+        .btn-warning {
+            background: linear-gradient(135deg, #e67e22, #f39c12);
+            color: var(--white);
+            box-shadow: 0 4px 15px rgba(230, 126, 34, 0.3);
+        }
+        
         .btn-outline {
             background: transparent;
             border: 2px solid var(--primary);
@@ -466,6 +479,11 @@ try {
         
         .badge-success {
             background: var(--success);
+            color: white;
+        }
+        
+        .badge-warning {
+            background: var(--warning);
             color: white;
         }
         
@@ -507,6 +525,24 @@ try {
             font-weight: bold;
             position: absolute;
             left: 0;
+        }
+        
+        .payment-alert {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border: 2px solid #f39c12;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .payment-success {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            border: 2px solid #28a745;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            text-align: center;
         }
         
         @media (max-width: 768px) {
@@ -597,6 +633,39 @@ try {
                     </p>
                 </div>
 
+                <!-- Afficher un message selon le statut du paiement -->
+                <?php if (!$paiement_effectue): ?>
+                <div class="payment-alert">
+                    <div style="font-size: 2rem; color: #e67e22; margin-bottom: 1rem;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h3 style="color: #e67e22; margin-bottom: 1rem;">Paiement en attente</h3>
+                    <p style="margin-bottom: 1.5rem; font-size: 1.1rem;">
+                        Votre réservation est confirmée mais le paiement n'a pas encore été effectué.<br>
+                        Veuillez finaliser le paiement pour garantir votre vol.
+                    </p>
+                    <div class="action-buttons">
+                        <a href="paiement.php?reservation_id=<?php echo $id_reservation; ?>" class="btn btn-warning">
+                            <i class="fas fa-credit-card"></i> Procéder au paiement
+                        </a>
+                    </div>
+                </div>
+                <?php else: ?>
+                <div class="payment-success">
+                    <div style="font-size: 2rem; color: #28a745; margin-bottom: 1rem;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3 style="color: #28a745; margin-bottom: 1rem;">Paiement Confirmé</h3>
+                    <p style="margin-bottom: 1rem; font-size: 1.1rem;">
+                        Votre paiement a été traité avec succès le 
+                        <strong><?php echo date('d/m/Y à H:i', strtotime($reservation['date_paiement'])); ?></strong>
+                    </p>
+                    <p style="margin: 0; font-size: 1rem;">
+                        Mode de paiement: <strong><?php echo htmlspecialchars($reservation['mode_paiement']); ?></strong>
+                    </p>
+                </div>
+                <?php endif; ?>
+
                 <!-- Carte de réservation principale -->
                 <div class="reservation-card">
                     <div class="card-header">
@@ -609,9 +678,15 @@ try {
                             </p>
                         </div>
                         <div style="text-align: right;">
-                            <div class="badge badge-success">
-                                <i class="fas fa-check"></i> Confirmé
+                            <div class="badge <?php echo $paiement_effectue ? 'badge-success' : 'badge-warning'; ?>">
+                                <i class="fas <?php echo $paiement_effectue ? 'fa-check' : 'fa-clock'; ?>"></i> 
+                                <?php echo htmlspecialchars($reservation['statut']); ?>
                             </div>
+                            <?php if (!$paiement_effectue): ?>
+                            <div class="badge badge-warning" style="margin-top: 0.5rem;">
+                                <i class="fas fa-exclamation-circle"></i> Paiement en attente
+                            </div>
+                            <?php endif; ?>
                             <p style="margin: 0.5rem 0 0; font-size: 0.9rem;">
                                 <?php echo date('d/m/Y à H:i', strtotime($reservation['date_reservation'])); ?>
                             </p>
@@ -645,7 +720,7 @@ try {
                                 <div class="detail-item">
                                     <span class="detail-label">Durée</span>
                                     <span class="detail-value">
-                                        <?php echo $reservation['duree_vol'] ?? '2h 30min'; ?>
+                                        <?php echo $duree_vol; ?>
                                     </span>
                                 </div>
                             </div>
@@ -663,11 +738,11 @@ try {
                                 </div>
                                 <div class="detail-item">
                                     <span class="detail-label">Porte d'embarquement</span>
-                                    <span class="detail-value"><?php echo $reservation['porte_embarquement'] ?? 'À déterminer'; ?></span>
+                                    <span class="detail-value"><?php echo $porte_embarquement; ?></span>
                                 </div>
                                 <div class="detail-item">
-                                    <span class="detail-label">Classe</span>
-                                    <span class="detail-value"><?php echo htmlspecialchars($reservation['classe']); ?></span>
+                                    <span class="detail-label">Paiement</span>
+                                    <span class="detail-value"><?php echo htmlspecialchars($reservation['mode_paiement'] ?? 'Carte'); ?></span>
                                 </div>
                             </div>
 
@@ -721,14 +796,14 @@ try {
                         </div>
                         <?php endif; ?>
 
-                        <!-- Détail du prix -->
+                        <!-- Détail du prix - CORRIGÉ -->
                         <div class="price-breakdown">
                             <h4 style="color: var(--primary); margin-bottom: 1rem;">
                                 <i class="fas fa-receipt"></i> Détail du prix
                             </h4>
                             <div class="price-item">
                                 <span>Prix de base (<?php echo $reservation['nombre_passagers']; ?> passagers)</span>
-                                <span><?php echo number_format($prix_base, 2, ',', ' '); ?>€</span>
+                                <span><?php echo number_format($prix_base_vol, 2, ',', ' '); ?>€</span>
                             </div>
                             <?php if ($supplements_sieges > 0): ?>
                             <div class="price-item">
@@ -811,7 +886,7 @@ try {
                         </div>
                         <div class="info-box">
                             <div class="info-label">Porte</div>
-                            <div class="info-value"><?php echo $reservation['porte_embarquement'] ?? '--'; ?></div>
+                            <div class="info-value"><?php echo $porte_embarquement; ?></div>
                         </div>
                     </div>
                 </div>
@@ -839,7 +914,7 @@ try {
                     <a href="index.php" class="btn btn-primary">
                         <i class="fas fa-home"></i> Retour à l'accueil
                     </a>
-                    <a href="mes_reservations.php" class="btn btn-success">
+                    <a href="vge64/mes_reservations.php" class="btn btn-success">
                         <i class="fas fa-list"></i> Mes réservations
                     </a>
                 </div>
@@ -867,30 +942,6 @@ try {
 
         // Lancer les confettis au chargement
         document.addEventListener('DOMContentLoaded', createConfetti);
-
-        // Animation de compteur pour le prix total
-        function animateValue(element, start, end, duration) {
-            let startTimestamp = null;
-            const step = (timestamp) => {
-                if (!startTimestamp) startTimestamp = timestamp;
-                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                const value = Math.floor(progress * (end - start) + start);
-                element.textContent = value.toFixed(2).replace('.', ',') + '€';
-                if (progress < 1) {
-                    window.requestAnimationFrame(step);
-                }
-            };
-            window.requestAnimationFrame(step);
-        }
-
-        // Démarrer l'animation du prix
-        document.addEventListener('DOMContentLoaded', () => {
-            const priceElement = document.querySelector('.price-total .detail-value');
-            if (priceElement) {
-                const price = parseFloat(priceElement.textContent.replace('€', '').replace(',', '.'));
-                animateValue(priceElement, 0, price, 2000);
-            }
-        });
     </script>
 </body>
 </html>
