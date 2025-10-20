@@ -270,7 +270,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
             }
             
             // Rediriger vers la page de confirmation
-            header('Location: confirmation_reservation.php?id_reservation=' . $id_reservation);
+            header('Location: paiement.php?id_reservation=' . $id_reservation);
             exit;
             
         } catch (Exception $e) {
