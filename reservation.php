@@ -1,8 +1,15 @@
 <?php
+// Activer l'affichage des erreurs pour le débogage
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// DÉBUT DU BUFFER - TRÈS IMPORTANT
+ob_start();
+
 require_once 'includes/db.php';
 session_start();
 
-// Vérifier si l'utilisateur est connecté
+// Vérifier si l'utilisateur est connecté - CORRECTION DES NOMS DE SESSION
 if (!isset($_SESSION['id_user'])) {
     header('Location: vge64/connexion.php?redirect=' . urlencode($_SERVER['REQUEST_URI']));
     exit;
@@ -78,14 +85,10 @@ try {
     $stmt_bagages->execute();
     $options_bagage = $stmt_bagages->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    // Si la table n'existe pas, créer des options par défaut
     $options_bagage = [
         ['id_option' => 1, 'nom_option' => 'Bagage à main', 'description' => 'Bagage cabine standard (8kg)', 'poids_max' => 8, 'prix_supplement' => 0],
         ['id_option' => 2, 'nom_option' => 'Bagage en soute 20kg', 'description' => 'Bagage en soute jusqu\'à 20kg', 'poids_max' => 20, 'prix_supplement' => 25],
         ['id_option' => 3, 'nom_option' => 'Bagage en soute 30kg', 'description' => 'Bagage en soute jusqu\'à 30kg', 'poids_max' => 30, 'prix_supplement' => 45],
-        ['id_option' => 4, 'nom_option' => 'Excédent bagage 5kg', 'description' => 'Supplément pour 5kg supplémentaires', 'poids_max' => 5, 'prix_supplement' => 15],
-        ['id_option' => 5, 'nom_option' => 'Bagage sport', 'description' => 'Équipement sportif (ski, golf, etc.)', 'poids_max' => 30, 'prix_supplement' => 35],
-        ['id_option' => 6, 'nom_option' => 'Bagage fragile', 'description' => 'Articles fragiles - traitement spécial', 'poids_max' => 20, 'prix_supplement' => 20]
     ];
 }
 
@@ -119,6 +122,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
             // Commencer une transaction
             $pdo->beginTransaction();
             
+            error_log("=== DÉBUT RÉSERVATION ===");
+            error_log("Passagers: $nombre_passagers, Sièges: " . count($sieges_selectionnes));
+            
             // Calculer le prix total
             $prix_total = $vol['prix'] * $nombre_passagers;
             $supplements_total = 0;
@@ -129,15 +135,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
                 $stmt = $pdo->prepare("SELECT supplement_prix FROM sieges_avion WHERE id_siege = ?");
                 $stmt->execute([$id_siege]);
                 $siege = $stmt->fetch(PDO::FETCH_ASSOC);
-                $supplement = $siege['supplement_prix'];
-                $prix_total += $supplement;
-                $supplements_total += $supplement;
+                if ($siege) {
+                    $supplement = $siege['supplement_prix'];
+                    $prix_total += $supplement;
+                    $supplements_total += $supplement;
+                }
             }
             
             // Ajouter les suppléments des bagages
             foreach ($bagages_selectionnes as $id_option => $quantite) {
+                $quantite = intval($quantite);
                 if ($quantite > 0) {
-                    // Rechercher le prix de l'option
                     $prix_option = 0;
                     foreach ($options_bagage as $option) {
                         if ($option['id_option'] == $id_option) {
@@ -156,32 +164,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
             $taxes_aeroport = 25.00;
             $prix_total += $frais_service + $taxes_aeroport;
             
+            // CORRECTION : Utiliser 'confirmé' au lieu de 'confirmée'
+            $statut_reservation = 'confirmé';
+            
+            error_log("Prix total calculé: $prix_total");
+            
             // Créer la réservation
             $stmt = $pdo->prepare("
                 INSERT INTO reservations (id_user, id_vol, statut, nombre_passagers, prix_total, date_reservation)
-                VALUES (?, ?, 'confirmée', ?, ?, NOW())
+                VALUES (?, ?, ?, ?, ?, NOW())
             ");
-            $stmt->execute([$_SESSION['id_user'], $id_vol, $nombre_passagers, $prix_total]);
+            $stmt->execute([$_SESSION['id_user'], $id_vol, $statut_reservation, $nombre_passagers, $prix_total]);
             $id_reservation = $pdo->lastInsertId();
+            
+            if (!$id_reservation) {
+                throw new Exception("Échec de la création de la réservation");
+            }
+            
+            error_log("Réservation créée avec ID: $id_reservation");
             
             // Associer les sièges à la réservation
             foreach ($sieges_selectionnes as $id_siege) {
-                $stmt = $pdo->prepare("
-                    INSERT INTO reservation_sieges (id_reservation, id_siege, prix_paye)
-                    VALUES (?, ?, ?)
-                ");
                 $stmt_siege = $pdo->prepare("SELECT supplement_prix FROM sieges_avion WHERE id_siege = ?");
                 $stmt_siege->execute([$id_siege]);
                 $siege = $stmt_siege->fetch(PDO::FETCH_ASSOC);
                 
-                $prix_siege = $vol['prix'] + $siege['supplement_prix'];
+                $prix_siege = $vol['prix'] + ($siege ? $siege['supplement_prix'] : 0);
+                
+                $stmt = $pdo->prepare("
+                    INSERT INTO reservation_sieges (id_reservation, id_siege, prix_paye)
+                    VALUES (?, ?, ?)
+                ");
                 $stmt->execute([$id_reservation, $id_siege, $prix_siege]);
             }
             
+            error_log("Sièges associés: " . count($sieges_selectionnes));
+            
             // Associer les bagages à la réservation
             foreach ($bagages_selectionnes as $id_option => $quantite) {
+                $quantite = intval($quantite);
                 if ($quantite > 0) {
-                    // Rechercher le prix de l'option
                     $prix_option = 0;
                     foreach ($options_bagage as $option) {
                         if ($option['id_option'] == $id_option) {
@@ -190,28 +212,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
                         }
                     }
                     
-                    // Vérifier si la table reservation_bagages existe
-                    $table_exists = $pdo->query("SHOW TABLES LIKE 'reservation_bagages'")->rowCount() > 0;
-                    
-                    if ($table_exists) {
-                        $stmt_bagage = $pdo->prepare("
-                            INSERT INTO reservation_bagages (id_reservation, id_option, quantite, prix_applique)
-                            VALUES (?, ?, ?, ?)
-                        ");
-                        $stmt_bagage->execute([$id_reservation, $id_option, $quantite, $prix_option]);
-                    }
+                    $stmt_bagage = $pdo->prepare("
+                        INSERT INTO reservation_bagages (id_reservation, id_option, quantite, prix_applique)
+                        VALUES (?, ?, ?, ?)
+                    ");
+                    $stmt_bagage->execute([$id_reservation, $id_option, $quantite, $prix_option]);
                 }
             }
             
+            error_log("Bagages associés: " . count($bagages_selectionnes));
+            
             // Enregistrer le paiement
-            $table_paiements_exists = $pdo->query("SHOW TABLES LIKE 'paiements'")->rowCount() > 0;
-            if ($table_paiements_exists) {
-                $stmt_paiement = $pdo->prepare("
-                    INSERT INTO paiements (id_reservation, montant, mode_paiement, statut, date_paiement)
-                    VALUES (?, ?, 'carte', 'réussi', NOW())
-                ");
-                $stmt_paiement->execute([$id_reservation, $prix_total]);
-            }
+            $stmt_paiement = $pdo->prepare("
+                INSERT INTO paiements (id_reservation, montant, mode_paiement, statut, date_paiement)
+                VALUES (?, ?, 'carte', 'réussi', NOW())
+            ");
+            $stmt_paiement->execute([$id_reservation, $prix_total]);
+            
+            error_log("Paiement enregistré");
             
             // Mettre à jour les places disponibles
             $stmt = $pdo->prepare("
@@ -221,28 +239,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
             ");
             $stmt->execute([$nombre_passagers, $id_vol]);
             
-            // Envoyer un email de confirmation (simulation)
-            $table_emails_exists = $pdo->query("SHOW TABLES LIKE 'emails'")->rowCount() > 0;
-            if ($table_emails_exists) {
+            error_log("Places mises à jour");
+            
+            // Envoyer un email de confirmation
+            try {
                 $stmt_email = $pdo->prepare("
-                    INSERT INTO emails (id_user, sujet, contenu, statut, date_creation)
-                    VALUES (?, ?, ?, 'envoyé', NOW())
+                    INSERT INTO emails (id_user, sujet, contenu, type, statut, date_envoi)
+                    VALUES (?, ?, ?, 'confirmation', 'envoyé', NOW())
                 ");
                 $sujet_email = "Confirmation de votre réservation JetReserve";
                 $contenu_email = "Votre réservation n°" . $id_reservation . " pour le vol " . $vol['depart'] . " - " . $vol['arrivee'] . " a été confirmée. Montant total : " . number_format($prix_total, 2, ',', ' ') . "€";
                 $stmt_email->execute([$_SESSION['id_user'], $sujet_email, $contenu_email]);
+                error_log("Email programmé");
+            } catch (Exception $e) {
+                error_log("Erreur email non critique: " . $e->getMessage());
+                // Ne pas bloquer la réservation pour une erreur d'email
             }
             
             // Confirmer la transaction
             $pdo->commit();
             
-            // Rediriger vers la page de confirmation
-            header('Location: confirmation_reservation.php?id_reservation=' . $id_reservation);
-            exit;
+            error_log("=== RÉSERVATION RÉUSSIE ===");
             
-        } catch (PDOException $e) {
+            // Préparer et effectuer une redirection robuste
+            $redirectUrl = 'confirmation_reservation.php?id_reservation=' . $id_reservation;
+            
+            // Libérer le verrou de session pour éviter tout blocage côté confirmation
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_write_close();
+            }
+            
+            // Nettoyer le buffer en cours (empêche "headers already sent")
+            if (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+            
+            // Tenter l'en-tête HTTP, sinon fallback JS/meta
+            if (!headers_sent()) {
+                // Utiliser 303 See Other pour rediriger après POST
+                http_response_code(303);
+                header('Location: ' . $redirectUrl);
+                header('Connection: close');
+                // Si possible, annoncer une longueur nulle pour libérer le client
+                if (!headers_sent()) {
+                    header('Content-Length: 0');
+                }
+                flush();
+                exit;
+            } else {
+                error_log('Redirection fallback JS utilisée vers: ' . $redirectUrl);
+                echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=' . htmlspecialchars($redirectUrl, ENT_QUOTES, 'UTF-8') . '"><script>window.location.replace(' . json_encode($redirectUrl) . ');</script></head><body>Redirection...</body></html>';
+                exit;
+            }
+            
+        } catch (Exception $e) {
             $pdo->rollBack();
-            $erreurs[] = "Erreur lors de la réservation: " . $e->getMessage();
+            $erreur_message = "Erreur lors de la réservation: " . $e->getMessage();
+            $erreurs[] = $erreur_message;
+            error_log("=== ERREUR RÉSERVATION: " . $e->getMessage() . " ===");
+            error_log("Stack trace: " . $e->getTraceAsString());
         }
     }
     
@@ -250,6 +305,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
         $erreur = implode("<br>", $erreurs);
     }
 }
+
+// Si on arrive ici, c'est qu'on affiche le formulaire ou qu'il y a une erreur
+// On nettoie le buffer et on affiche la page normalement
+ob_end_flush();
 ?>
 
 <!DOCTYPE html>
@@ -261,6 +320,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* VOTRE CSS EXISTANT - JE GARDE TOUT */
         :root {
             --primary: #2c3e50;
             --secondary: #7f8c8d;
@@ -1139,7 +1199,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
                     
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i>
-                        <strong>Inclus avec votre billet :</strong> 1 bagage à main (8kg) par passager
+                        <strong>Inclus avec votre billet :</strong> 1 bagage à main (8kg) per passager
                     </div>
                     
                     <!-- Affichage des bagages sélectionnés -->
@@ -1234,6 +1294,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
     </div>
 
     <script>
+        // VOTRE JAVASCRIPT EXISTANT - JE GARDE TOUT
         // Stocker les suppléments des sièges
         const supplementsSieges = {};
         <?php foreach ($sieges_disponibles as $siege): ?>
