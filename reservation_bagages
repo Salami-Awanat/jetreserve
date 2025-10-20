@@ -1,0 +1,676 @@
+<?php
+// reservation_bagages.php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+require_once 'includes/db.php';
+session_start();
+
+// Vérifier si l'utilisateur est connecté et si les sièges sont sélectionnés
+if (!isset($_SESSION['id_user']) || !isset($_SESSION['reservation_temp'])) {
+    header('Location: index.php');
+    exit;
+}
+
+$reservation_temp = $_SESSION['reservation_temp'];
+$id_vol = $reservation_temp['id_vol'];
+
+// Récupérer les détails du vol
+try {
+    $stmt = $pdo->prepare("
+        SELECT v.*, c.nom_compagnie
+        FROM vols v 
+        JOIN compagnies c ON v.id_compagnie = c.id_compagnie
+        WHERE v.id_vol = ?
+    ");
+    $stmt->execute([$id_vol]);
+    $vol = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$vol) {
+        header('Location: index.php');
+        exit;
+    }
+} catch (PDOException $e) {
+    die("Erreur lors de la récupération du vol: " . $e->getMessage());
+}
+
+// Récupérer les options de bagage
+try {
+    $stmt_bagages = $pdo->prepare("SELECT * FROM options_bagage WHERE statut = 'actif' ORDER BY prix_supplement");
+    $stmt_bagages->execute();
+    $options_bagage = $stmt_bagages->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $options_bagage = [
+        ['id_option' => 1, 'nom_option' => 'Bagage à main', 'description' => 'Bagage cabine standard (8kg)', 'poids_max' => 8, 'prix_supplement' => 0],
+        ['id_option' => 2, 'nom_option' => 'Bagage en soute 20kg', 'description' => 'Bagage en soute jusqu\'à 20kg', 'poids_max' => 20, 'prix_supplement' => 25],
+        ['id_option' => 3, 'nom_option' => 'Bagage en soute 30kg', 'description' => 'Bagage en soute jusqu\'à 30kg', 'poids_max' => 30, 'prix_supplement' => 45],
+    ];
+}
+
+// Traitement de la sélection des bagages
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['finaliser_reservation'])) {
+    $bagages_selectionnes = isset($_POST['bagages']) ? $_POST['bagages'] : [];
+    
+    try {
+        $pdo->beginTransaction();
+        
+        // Calcul du prix total
+        $prix_total = $vol['prix'] * $reservation_temp['nombre_passagers'];
+        
+        // Suppléments sièges
+        $stmt_sieges = $pdo->prepare("SELECT supplement_prix FROM sieges_avion WHERE id_siege = ?");
+        foreach ($reservation_temp['sieges_selectionnes'] as $id_siege) {
+            $stmt_sieges->execute([$id_siege]);
+            $siege = $stmt_sieges->fetch(PDO::FETCH_ASSOC);
+            $prix_total += $siege['supplement_prix'];
+        }
+        
+        // Suppléments bagages
+        foreach ($bagages_selectionnes as $id_option => $quantite) {
+            $quantite = intval($quantite);
+            if ($quantite > 0) {
+                foreach ($options_bagage as $option) {
+                    if ($option['id_option'] == $id_option) {
+                        $prix_total += $option['prix_supplement'] * $quantite;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Frais fixes
+        $prix_total += 9.00 + 25.00;
+        
+        // Création de la réservation
+        $stmt = $pdo->prepare("
+            INSERT INTO reservations (id_user, id_vol, statut, nombre_passagers, prix_total, date_reservation)
+            VALUES (?, ?, 'confirmé', ?, ?, NOW())
+        ");
+        $stmt->execute([$_SESSION['id_user'], $id_vol, $reservation_temp['nombre_passagers'], $prix_total]);
+        $id_reservation = $pdo->lastInsertId();
+        
+        // Association des sièges
+        $stmt_siege = $pdo->prepare("
+            INSERT INTO reservation_sieges (id_reservation, id_siege, prix_paye)
+            VALUES (?, ?, ?)
+        ");
+        
+        foreach ($reservation_temp['sieges_selectionnes'] as $id_siege) {
+            $prix_siege = $vol['prix'];
+            $stmt_sieges->execute([$id_siege]);
+            $siege = $stmt_sieges->fetch(PDO::FETCH_ASSOC);
+            $prix_siege += $siege['supplement_prix'];
+            $stmt_siege->execute([$id_reservation, $id_siege, $prix_siege]);
+        }
+        
+        // Association des bagages
+        if (!empty($bagages_selectionnes)) {
+            $stmt_bagage = $pdo->prepare("
+                INSERT INTO reservation_bagages (id_reservation, id_option, quantite, prix_applique)
+                VALUES (?, ?, ?, ?)
+            ");
+            
+            foreach ($bagages_selectionnes as $id_option => $quantite) {
+                $quantite = intval($quantite);
+                if ($quantite > 0) {
+                    $prix_option = 0;
+                    foreach ($options_bagage as $option) {
+                        if ($option['id_option'] == $id_option) {
+                            $prix_option = $option['prix_supplement'];
+                            break;
+                        }
+                    }
+                    $stmt_bagage->execute([$id_reservation, $id_option, $quantite, $prix_option]);
+                }
+            }
+        }
+        
+        // Paiement
+        $stmt_paiement = $pdo->prepare("
+            INSERT INTO paiements (id_reservation, montant, mode_paiement, statut, date_paiement)
+            VALUES (?, ?, 'carte', 'réussi', NOW())
+        ");
+        $stmt_paiement->execute([$id_reservation, $prix_total]);
+        
+        // Mise à jour des places disponibles
+        $stmt = $pdo->prepare("
+            UPDATE vols 
+            SET places_disponibles = GREATEST(0, places_disponibles - ?)
+            WHERE id_vol = ?
+        ");
+        $stmt->execute([$reservation_temp['nombre_passagers'], $id_vol]);
+        
+        $pdo->commit();
+        
+        // Nettoyer la session et rediriger
+        unset($_SESSION['reservation_temp']);
+        header('Location: confirmation_reservation.php?id_reservation=' . $id_reservation);
+        exit;
+        
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        $erreur = "Erreur lors de la réservation: " . $e->getMessage();
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Options de bagage - JetReserve</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Le CSS est similaire à reservation_sieges.php mais adapté pour les bagages */
+        :root {
+            --primary: #e2001a;
+            --secondary: #0033a0;
+            --success: #28a745;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --white: #ffffff;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border-color: #dee2e6;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e3e8f0 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        header {
+            background: var(--white);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+        }
+        
+        .logo {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo span {
+            color: var(--secondary);
+        }
+        
+        .progress-steps {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+            position: relative;
+        }
+        
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+            margin: 0 50px;
+        }
+        
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--light-gray);
+            border: 3px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .step.active .step-number {
+            background: var(--primary);
+            color: var(--white);
+            border-color: var(--primary);
+        }
+        
+        .step.completed .step-number {
+            background: var(--success);
+            color: var(--white);
+            border-color: var(--success);
+        }
+        
+        .step-label {
+            font-size: 0.9rem;
+            color: var(--gray);
+            font-weight: 500;
+        }
+        
+        .step.active .step-label {
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        .reservation-card {
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            padding: 40px;
+            margin: 30px 0;
+        }
+        
+        .vol-resume {
+            background: linear-gradient(135deg, var(--primary), #ff3344);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .bagages-container {
+            display: grid;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .bagage-option {
+            border: 2px solid var(--border-color);
+            border-radius: 15px;
+            padding: 25px;
+            background: var(--white);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .bagage-option::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: var(--primary);
+        }
+        
+        .bagage-option:hover {
+            border-color: var(--primary);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .bagage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .bagage-header h4 {
+            color: var(--primary);
+            margin: 0;
+            font-size: 1.3rem;
+        }
+        
+        .bagage-price {
+            background: linear-gradient(135deg, var(--success), #34ce57);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .bagage-description {
+            color: var(--gray);
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+        
+        .bagage-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .btn-qty {
+            width: 45px;
+            height: 45px;
+            border: 2px solid var(--border-color);
+            background: var(--light);
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-qty:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .bagage-qty {
+            width: 80px;
+            text-align: center;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 600;
+            background: var(--white);
+            font-size: 1.1rem;
+        }
+        
+        .bagage-total {
+            margin-left: auto;
+            font-weight: bold;
+            color: var(--primary);
+            min-width: 100px;
+            text-align: right;
+            font-size: 1.2rem;
+        }
+        
+        .resume-prix {
+            background: linear-gradient(135deg, var(--light), var(--light-gray));
+            padding: 25px;
+            border-radius: 15px;
+            margin: 30px 0;
+            border: 2px solid var(--border-color);
+        }
+        
+        .ligne-prix {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .ligne-prix:last-child {
+            border-bottom: none;
+        }
+        
+        .prix-total {
+            border-top: 3px solid var(--primary);
+            padding-top: 20px;
+            margin-top: 20px;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-family: 'Poppins', sans-serif;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #34ce57);
+            color: var(--white);
+        }
+        
+        .btn-full {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .alert {
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 2px solid transparent;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+        
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-color: #93c5fd;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-top">
+                <a href="index.php" class="logo">
+                    <i class="fas fa-plane"></i>
+                    Jet<span>Reserve</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Barre de progression -->
+        <div class="progress-steps">
+            <div class="step completed">
+                <div class="step-number"><i class="fas fa-check"></i></div>
+                <div class="step-label">Vol</div>
+            </div>
+            <div class="step completed">
+                <div class="step-number"><i class="fas fa-check"></i></div>
+                <div class="step-label">Sièges</div>
+            </div>
+            <div class="step active">
+                <div class="step-number">3</div>
+                <div class="step-label">Bagages</div>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-label">Paiement</div>
+            </div>
+        </div>
+
+        <div class="reservation-card">
+            <!-- Résumé du vol -->
+            <div class="vol-resume">
+                <h2 style="margin-bottom: 15px;"><?php echo htmlspecialchars($vol['depart']); ?> → <?php echo htmlspecialchars($vol['arrivee']); ?></h2>
+                <p><strong>Passagers :</strong> <?php echo $reservation_temp['nombre_passagers']; ?> personne(s)</p>
+                <p><strong>Vol :</strong> <?php echo htmlspecialchars($vol['nom_compagnie']); ?> - <?php echo htmlspecialchars($vol['numero_vol']); ?></p>
+            </div>
+
+            <!-- Formulaire des bagages -->
+            <form method="POST" id="bagagesForm">
+                <?php if (isset($erreur)): ?>
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        <div><strong>Erreur :</strong> <?php echo $erreur; ?></div>
+                    </div>
+                <?php endif; ?>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Inclus avec votre billet :</strong> 1 bagage à main (8kg) par passager
+                </div>
+
+                <div class="bagages-container">
+                    <?php foreach ($options_bagage as $option): ?>
+                        <?php if ($option['nom_option'] !== 'Bagage à main'): ?>
+                            <div class="bagage-option">
+                                <div class="bagage-header">
+                                    <h4>
+                                        <?php echo htmlspecialchars($option['nom_option']); ?>
+                                        <?php if ($option['poids_max']): ?>
+                                            <small>(jusqu'à <?php echo $option['poids_max']; ?>kg)</small>
+                                        <?php endif; ?>
+                                    </h4>
+                                    <span class="bagage-price">+<?php echo number_format($option['prix_supplement'], 2, ',', ' '); ?>€</span>
+                                </div>
+                                
+                                <?php if (!empty($option['description'])): ?>
+                                    <p class="bagage-description"><?php echo htmlspecialchars($option['description']); ?></p>
+                                <?php endif; ?>
+                                
+                                <div class="bagage-controls">
+                                    <button type="button" class="btn-qty minus" data-target="bagage_<?php echo $option['id_option']; ?>">-</button>
+                                    <input type="number" 
+                                           name="bagages[<?php echo $option['id_option']; ?>]" 
+                                           id="bagage_<?php echo $option['id_option']; ?>"
+                                           class="bagage-qty" 
+                                           value="0" 
+                                           min="0" 
+                                           max="10"
+                                           onchange="calculerPrix()">
+                                    <button type="button" class="btn-qty plus" data-target="bagage_<?php echo $option['id_option']; ?>">+</button>
+                                    
+                                    <span class="bagage-total" id="bagage_total_<?php echo $option['id_option']; ?>">
+                                        0,00€
+                                    </span>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- Récapitulatif du prix -->
+                <div class="resume-prix">
+                    <h3 style="color: var(--primary); margin-bottom: 20px;">
+                        <i class="fas fa-receipt"></i> Récapitulatif
+                    </h3>
+                    <div class="ligne-prix">
+                        <span>Billets de base (<?php echo $reservation_temp['nombre_passagers']; ?> passagers):</span>
+                        <span id="recap-prix-base"><?php echo number_format($vol['prix'] * $reservation_temp['nombre_passagers'], 2, ',', ' '); ?>€</span>
+                    </div>
+                    <div class="ligne-prix">
+                        <span>Suppléments bagages:</span>
+                        <span id="recap-supplements">0,00€</span>
+                    </div>
+                    <div class="ligne-prix">
+                        <span>Frais de service:</span>
+                        <span>9,00€</span>
+                    </div>
+                    <div class="ligne-prix">
+                        <span>Taxes aéroport:</span>
+                        <span>25,00€</span>
+                    </div>
+                    <div class="ligne-prix prix-total">
+                        <span>Total à payer:</span>
+                        <span id="recap-prix-total"><?php echo number_format(($vol['prix'] * $reservation_temp['nombre_passagers']) + 9 + 25, 2, ',', ' '); ?>€</span>
+                    </div>
+                </div>
+
+                <!-- Bouton de finalisation -->
+                <button type="submit" name="finaliser_reservation" class="btn btn-success btn-full">
+                    <i class="fas fa-credit-card"></i> Finaliser la réservation et payer
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Stocker les options de bagage
+        const optionsBagage = {};
+        <?php foreach ($options_bagage as $option): ?>
+        optionsBagage[<?php echo $option['id_option']; ?>] = {
+            nom: '<?php echo addslashes($option['nom_option']); ?>',
+            prix: <?php echo $option['prix_supplement']; ?>
+        };
+        <?php endforeach; ?>
+
+        const prixBase = <?php echo $vol['prix']; ?>;
+        const nbPassagers = <?php echo $reservation_temp['nombre_passagers']; ?>;
+        const fraisService = 9.00;
+        const taxesAeroport = 25.00;
+
+        function calculerPrix() {
+            let supplementBagages = 0;
+            
+            // Calculer les suppléments des bagages
+            document.querySelectorAll('input.bagage-qty').forEach(input => {
+                const optionId = parseInt(input.name.match(/\[(\d+)\]/)[1]);
+                const quantite = parseInt(input.value) || 0;
+                
+                if (quantite > 0 && optionsBagage[optionId]) {
+                    const supplement = optionsBagage[optionId].prix * quantite;
+                    supplementBagages += supplement;
+                    
+                    // Mettre à jour le total par option
+                    document.getElementById(`bagage_total_${optionId}`).textContent = 
+                        supplement.toFixed(2).replace('.', ',') + '€';
+                } else {
+                    document.getElementById(`bagage_total_${optionId}`).textContent = '0,00€';
+                }
+            });
+            
+            const totalBase = prixBase * nbPassagers;
+            const total = totalBase + supplementBagages + fraisService + taxesAeroport;
+            
+            // Mettre à jour le récapitulatif
+            document.getElementById('recap-supplements').textContent = supplementBagages.toFixed(2).replace('.', ',') + '€';
+            document.getElementById('recap-prix-total').textContent = total.toFixed(2).replace('.', ',') + '€';
+        }
+
+        // Gestion des boutons quantité pour les bagages
+        document.querySelectorAll('.btn-qty').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const target = this.getAttribute('data-target');
+                const input = document.getElementById(target);
+                let value = parseInt(input.value) || 0;
+                
+                if (this.classList.contains('plus')) {
+                    value++;
+                } else if (this.classList.contains('minus') && value > 0) {
+                    value--;
+                }
+                
+                input.value = value;
+                calculerPrix();
+            });
+        });
+
+        // Initialiser le calcul du prix
+        calculerPrix();
+    </script>
+</body>
+</html>

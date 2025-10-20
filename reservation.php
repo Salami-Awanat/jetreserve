@@ -7,14 +7,20 @@ ini_set('display_errors', 1);
 set_time_limit(60);
 ini_set('max_execution_time', 60);
 
-// DÉBUT DU BUFFER
-ob_start();
+// DÉBUT DU BUFFER AMÉLIORÉ
+if (ob_get_level() == 0) {
+    ob_start();
+}
 
 require_once 'includes/db.php';
 session_start();
 
 // Vérifier si l'utilisateur est connecté
 if (!isset($_SESSION['id_user'])) {
+    // Nettoyer proprement le buffer avant redirection
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
     header('Location: vge64/connexion.php?redirect=' . urlencode($_SERVER['REQUEST_URI']));
     exit;
 }
@@ -23,6 +29,9 @@ if (!isset($_SESSION['id_user'])) {
 $id_vol = isset($_GET['id_vol']) ? intval($_GET['id_vol']) : 0;
 
 if ($id_vol <= 0) {
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
     header('Location: index.php');
     exit;
 }
@@ -41,6 +50,9 @@ try {
     $vol = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$vol) {
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
         header('Location: index.php');
         exit;
     }
@@ -95,7 +107,8 @@ try {
     ];
 }
 
-// Traitement du formulaire de réservation
+// Traitement du formulaire de réservation - VERSION CORRIGÉE
+$erreur = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
     
     $nombre_passagers = intval($_POST['nombre_passagers']);
@@ -128,10 +141,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
             
             error_log("=== DÉBUT RÉSERVATION ===");
             
-            // CALCUL RAPIDE DU PRIX - OPTIMISÉ
+            // CALCUL RAPIDE DU PRIX
             $prix_total = $vol['prix'] * $nombre_passagers;
             
-            // Suppléments sièges - OPTIMISÉ
+            // Suppléments sièges
             foreach ($sieges_selectionnes as $id_siege) {
                 foreach ($tous_sieges as $siege) {
                     if ($siege['id_siege'] == $id_siege) {
@@ -141,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
                 }
             }
             
-            // Suppléments bagages - OPTIMISÉ
+            // Suppléments bagages
             foreach ($bagages_selectionnes as $id_option => $quantite) {
                 $quantite = intval($quantite);
                 if ($quantite > 0) {
@@ -173,7 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
             
             error_log("Réservation créée avec ID: $id_reservation");
             
-            // ASSOCIATION DES SIÈGES - OPTIMISÉ
+            // ASSOCIATION DES SIÈGES
             $stmt_siege = $pdo->prepare("
                 INSERT INTO reservation_sieges (id_reservation, id_siege, prix_paye)
                 VALUES (?, ?, ?)
@@ -192,7 +205,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
             
             error_log("Sièges associés: " . count($sieges_selectionnes));
             
-            // ASSOCIATION DES BAGAGES - OPTIMISÉ
+            // ASSOCIATION DES BAGAGES
             if (!empty($bagages_selectionnes)) {
                 $stmt_bagage = $pdo->prepare("
                     INSERT INTO reservation_bagages (id_reservation, id_option, quantite, prix_applique)
@@ -251,11 +264,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
             
             error_log("=== RÉSERVATION RÉUSSIE ===");
             
-            // VIDER LE BUFFER ET REDIRIGER
-            ob_end_clean();
+            // VIDER LE BUFFER ET REDIRIGER PROPREMENT
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
             
             // Rediriger vers la page de confirmation
-            header('Location: confirmation.php?id_reservation=' . $id_reservation);
+            header('Location: confirmation_reservation.php?id_reservation=' . $id_reservation);
             exit;
             
         } catch (Exception $e) {
@@ -273,9 +288,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
 }
 
 // Si on arrive ici, c'est qu'on affiche le formulaire ou qu'il y a une erreur
-ob_end_flush();
+// On flush le buffer normalement
 ?>
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -285,9 +299,10 @@ ob_end_flush();
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* STYLE INSPIRÉ DE CORSAIR */
         :root {
-            --primary: #005baa;
-            --secondary: #ff6600;
+            --primary: #0054A4;
+            --secondary: #7f8c8d;
             --success: #28a745;
             --danger: #dc3545;
             --warning: #ffc107;
@@ -296,11 +311,13 @@ ob_end_flush();
             --dark: #343a40;
             --white: #ffffff;
             --gray: #6c757d;
-            --light-gray: #e9ecef;
+            --light-gray: #f9fafb;
             --border-color: #dee2e6;
-            --premium: #d4af37;
+            --premium: #FFD700;
             --business: #6f42c1;
-            --economy: #20c997;
+            --corsair-blue: #0054A4;
+            --corsair-dark-blue: #003366;
+            --corsair-light-blue: #0077CC;
         }
         
         * {
@@ -319,18 +336,17 @@ ob_end_flush();
         
         .container {
             width: 100%;
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 0 15px;
         }
         
         header {
-            background: var(--white);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background-color: var(--white);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
             position: sticky;
             top: 0;
             z-index: 1000;
-            backdrop-filter: blur(10px);
         }
         
         .header-top {
@@ -341,21 +357,21 @@ ob_end_flush();
         }
         
         .logo {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 700;
-            color: var(--primary);
+            color: var(--corsair-blue);
             text-decoration: none;
             display: flex;
             align-items: center;
             gap: 10px;
         }
         
-        .logo i {
-            color: var(--secondary);
+        .logo span {
+            color: var(--danger);
         }
         
-        .logo span {
-            color: var(--secondary);
+        .logo i {
+            font-size: 32px;
         }
         
         .auth-buttons {
@@ -365,17 +381,13 @@ ob_end_flush();
         }
         
         .user-welcome {
-            color: var(--dark);
+            color: var(--corsair-blue);
             font-weight: 500;
-            background: var(--light-gray);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.9rem;
         }
         
         .btn {
             padding: 10px 20px;
-            border-radius: 25px;
+            border-radius: 6px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -385,36 +397,37 @@ ob_end_flush();
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            font-size: 0.9rem;
+            text-align: center;
+            font-size: 14px;
         }
         
         .btn-outline {
             background-color: transparent;
-            border: 2px solid var(--primary);
-            color: var(--primary);
+            border: 2px solid var(--corsair-blue);
+            color: var(--corsair-blue);
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary), #0077cc);
+            background-color: var(--corsair-blue);
             color: var(--white);
-            box-shadow: 0 4px 15px rgba(0, 91, 170, 0.3);
         }
         
         .btn-success {
-            background: linear-gradient(135deg, var(--success), #34ce57);
+            background: linear-gradient(135deg, var(--success), #1e7e34);
             color: var(--white);
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            font-weight: 600;
+            font-size: 16px;
+            padding: 15px 30px;
         }
         
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
         
         .btn-lg {
-            padding: 15px 30px;
+            padding: 12px 24px;
             font-size: 1.1rem;
-            border-radius: 30px;
         }
         
         .btn-full {
@@ -422,34 +435,19 @@ ob_end_flush();
             justify-content: center;
         }
         
-        .reservation-layout {
-            display: grid;
-            grid-template-columns: 1fr 400px;
-            gap: 30px;
-            margin: 30px auto;
-        }
-        
-        .reservation-main {
+        .reservation-container {
+            max-width: 1000px;
+            margin: 2rem auto;
             background: var(--white);
-            border-radius: 20px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
         
-        .reservation-sidebar {
-            background: var(--white);
-            border-radius: 20px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-            padding: 30px;
-            height: fit-content;
-            position: sticky;
-            top: 100px;
-        }
-        
         .reservation-header {
-            background: linear-gradient(135deg, var(--primary), #0077cc);
+            background: linear-gradient(135deg, var(--corsair-blue), var(--corsair-dark-blue));
             color: var(--white);
-            padding: 30px;
+            padding: 2.5rem;
             position: relative;
             overflow: hidden;
         }
@@ -468,14 +466,14 @@ ob_end_flush();
         .reservation-title {
             font-size: 2rem;
             font-weight: 600;
-            margin-bottom: 10px;
+            margin-bottom: 0.5rem;
             position: relative;
         }
         
         .progress-steps {
             display: flex;
             justify-content: space-between;
-            margin: 30px 0;
+            margin: 2rem 0;
             position: relative;
         }
         
@@ -486,7 +484,7 @@ ob_end_flush();
             left: 0;
             right: 0;
             height: 3px;
-            background: rgba(255,255,255,0.3);
+            background: var(--border-color);
             z-index: 1;
         }
         
@@ -502,21 +500,20 @@ ob_end_flush();
             width: 35px;
             height: 35px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.2);
-            border: 2px solid rgba(255,255,255,0.5);
+            background: var(--white);
+            border: 3px solid var(--border-color);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            margin-bottom: 8px;
+            margin-bottom: 0.5rem;
             transition: all 0.3s ease;
         }
         
         .step.active .step-number {
-            background: var(--white);
-            color: var(--primary);
-            border-color: var(--white);
-            transform: scale(1.1);
+            background: var(--corsair-blue);
+            color: var(--white);
+            border-color: var(--corsair-blue);
         }
         
         .step.completed .step-number {
@@ -526,18 +523,18 @@ ob_end_flush();
         }
         
         .step-label {
-            font-size: 0.85rem;
-            color: rgba(255,255,255,0.8);
+            font-size: 0.9rem;
+            color: var(--secondary);
             font-weight: 500;
         }
         
         .step.active .step-label {
-            color: var(--white);
+            color: var(--corsair-blue);
             font-weight: 600;
         }
         
         .vol-resume {
-            padding: 30px;
+            padding: 2rem;
             border-bottom: 1px solid var(--border-color);
             background: var(--white);
         }
@@ -545,29 +542,29 @@ ob_end_flush();
         .vol-info-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
         }
         
         .info-card {
-            background: linear-gradient(135deg, var(--light), var(--light-gray));
-            padding: 20px;
-            border-radius: 15px;
-            border-left: 4px solid var(--primary);
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border-left: 5px solid var(--corsair-blue);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
         
         .info-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
         }
         
         .info-label {
             font-weight: 600;
-            color: var(--gray);
+            color: var(--corsair-blue);
             font-size: 0.9rem;
-            margin-bottom: 5px;
+            margin-bottom: 0.5rem;
         }
         
         .info-value {
@@ -577,109 +574,106 @@ ob_end_flush();
         }
         
         .reservation-form {
-            padding: 30px;
+            padding: 2rem;
         }
         
         .form-section {
-            margin-bottom: 30px;
-            padding: 25px;
-            border: 2px solid var(--light-gray);
-            border-radius: 15px;
+            margin-bottom: 2.5rem;
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
             background: var(--white);
             transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
         
         .form-section:hover {
-            border-color: var(--primary);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            border-color: var(--corsair-blue);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
         }
         
         .section-title {
-            color: var(--primary);
-            margin-bottom: 20px;
+            color: var(--corsair-blue);
+            margin-bottom: 1.5rem;
             font-weight: 600;
             font-size: 1.4rem;
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding-bottom: 10px;
+            gap: 0.75rem;
+            padding-bottom: 0.75rem;
             border-bottom: 2px solid var(--light-gray);
         }
         
         .section-title i {
-            color: var(--secondary);
+            color: var(--corsair-blue);
         }
         
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 1.5rem;
         }
         
         .form-group label {
             display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
             color: var(--dark);
+            font-size: 1rem;
         }
         
         .form-control {
             width: 100%;
             padding: 12px 15px;
             border: 2px solid var(--border-color);
-            border-radius: 10px;
+            border-radius: 8px;
             font-family: 'Poppins', sans-serif;
             transition: all 0.3s ease;
-            background: var(--light);
+            font-size: 1rem;
         }
         
         .form-control:focus {
             outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(0, 91, 170, 0.1);
-            background: var(--white);
+            border-color: var(--corsair-blue);
+            box-shadow: 0 0 0 3px rgba(0, 84, 164, 0.1);
         }
         
         .sieges-container {
-            margin-top: 20px;
+            margin-top: 1.5rem;
         }
         
         .avion-schema {
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
             position: relative;
-            border: 2px solid var(--light-gray);
+            border: 1px solid var(--border-color);
         }
         
         .cockpit {
-            background: linear-gradient(135deg, var(--primary), #0077cc);
+            background: var(--corsair-blue);
             color: white;
-            padding: 15px;
+            padding: 1.5rem;
             text-align: center;
-            border-radius: 15px 15px 0 0;
-            margin-bottom: 30px;
+            border-radius: 12px 12px 0 0;
+            margin-bottom: 2rem;
             font-weight: bold;
-            font-size: 1.1rem;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            font-size: 1.2rem;
         }
         
         .rangee-sieges {
             display: flex;
             justify-content: center;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 1.5rem;
             gap: 15px;
         }
         
         .numero-rangee {
             width: 35px;
             text-align: center;
-            font-weight: 600;
-            color: var(--gray);
-            background: var(--white);
-            padding: 5px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-weight: 700;
+            color: var(--corsair-blue);
+            font-size: 1.1rem;
         }
         
         .siege {
@@ -694,27 +688,24 @@ ob_end_flush();
             transition: all 0.3s ease;
             font-weight: 600;
             position: relative;
-            background: var(--white);
         }
         
         .siege.disponible {
-            border-color: var(--success);
             background: var(--white);
+            border-color: var(--success);
         }
         
         .siege.disponible:hover {
             background: var(--success);
             color: var(--white);
-            transform: scale(1.1);
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+            transform: scale(1.15);
         }
         
         .siege.selectionne {
-            background: var(--primary);
+            background: var(--corsair-blue);
             color: var(--white);
-            border-color: var(--primary);
-            transform: scale(1.1);
-            box-shadow: 0 4px 15px rgba(0, 91, 170, 0.4);
+            border-color: var(--corsair-blue);
+            transform: scale(1.15);
         }
         
         .siege.occupe {
@@ -722,132 +713,112 @@ ob_end_flush();
             color: var(--white);
             border-color: var(--danger);
             cursor: not-allowed;
-            opacity: 0.7;
         }
         
         .siege.premium {
             border-color: var(--premium);
-            background: linear-gradient(135deg, #fff9e6, #ffefb3);
+            background: linear-gradient(135deg, #fff9e6 0%, #ffefb3 100%);
         }
         
         .siege.business {
             border-color: var(--business);
-            background: linear-gradient(135deg, #f0e6ff, #d9c8ff);
-        }
-        
-        .siege.economy {
-            border-color: var(--economy);
+            background: linear-gradient(135deg, #f0e6ff 0%, #d9c3ff 100%);
         }
         
         .siege::after {
             content: attr(data-supplement);
             position: absolute;
-            top: -20px;
-            font-size: 0.7rem;
-            color: var(--secondary);
+            top: -25px;
+            font-size: 0.75rem;
+            color: var(--corsair-blue);
             font-weight: 600;
-            background: var(--white);
-            padding: 2px 5px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         
         .couloir {
             width: 50px;
             text-align: center;
-            color: var(--gray);
-            font-size: 0.8rem;
+            color: var(--secondary);
+            font-size: 0.9rem;
             font-weight: 600;
         }
         
         .legende-sieges {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 25px;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+            padding: 1rem;
+            background: var(--white);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
         }
         
         .legende-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px;
-            background: var(--light);
-            border-radius: 10px;
+            gap: 0.75rem;
         }
         
         .legende-couleur {
-            width: 25px;
-            height: 25px;
-            border-radius: 6px;
-            border: 2px solid var(--border-color);
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
         }
         
+        /* Styles pour les options de bagage */
         .bagages-container {
             display: grid;
-            gap: 20px;
-            margin-top: 20px;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
         }
         
         .bagage-option {
             border: 2px solid var(--border-color);
-            border-radius: 15px;
-            padding: 20px;
+            border-radius: 12px;
+            padding: 1.5rem;
             background: var(--white);
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .bagage-option::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 5px;
-            height: 100%;
-            background: var(--primary);
         }
         
         .bagage-option:hover {
-            border-color: var(--primary);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-            transform: translateY(-2px);
+            border-color: var(--corsair-blue);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
         }
         
         .bagage-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 0.75rem;
         }
         
         .bagage-header h4 {
-            color: var(--primary);
+            color: var(--corsair-blue);
             margin: 0;
             font-size: 1.2rem;
+            font-weight: 600;
         }
         
         .bagage-price {
-            background: linear-gradient(135deg, var(--success), #34ce57);
+            background: var(--success);
             color: white;
-            padding: 5px 15px;
+            padding: 0.5rem 1rem;
             border-radius: 20px;
             font-weight: bold;
             font-size: 1rem;
-            box-shadow: 0 2px 10px rgba(40, 167, 69, 0.3);
         }
         
         .bagage-description {
-            color: var(--gray);
+            color: var(--secondary);
             font-size: 0.95rem;
-            margin-bottom: 15px;
+            margin-bottom: 1.5rem;
         }
         
         .bagage-controls {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 0.75rem;
         }
         
         .btn-qty {
@@ -855,87 +826,78 @@ ob_end_flush();
             height: 40px;
             border: 2px solid var(--border-color);
             background: var(--light);
-            border-radius: 10px;
+            border-radius: 6px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 1.1rem;
             transition: all 0.3s ease;
+            font-size: 1.1rem;
         }
         
         .btn-qty:hover {
-            background: var(--primary);
+            background: var(--corsair-blue);
             color: white;
-            border-color: var(--primary);
-            transform: scale(1.1);
+            border-color: var(--corsair-blue);
         }
         
         .bagage-qty {
             width: 70px;
             text-align: center;
             border: 2px solid var(--border-color);
-            border-radius: 10px;
-            padding: 10px;
+            border-radius: 6px;
+            padding: 0.75rem;
+            font-size: 1rem;
             font-weight: 600;
-            background: var(--white);
         }
         
         .bagage-total {
             margin-left: auto;
             font-weight: bold;
-            color: var(--primary);
+            color: var(--corsair-blue);
             min-width: 80px;
             text-align: right;
             font-size: 1.1rem;
         }
         
-        .selected-items {
-            background: linear-gradient(135deg, var(--light), var(--light-gray));
-            padding: 20px;
-            border-radius: 15px;
-            margin-top: 20px;
-            border: 2px solid var(--border-color);
+        .selected-bagages {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-top: 1.5rem;
+            display: none;
+            border: 1px solid var(--corsair-light-blue);
         }
         
-        .selected-title {
-            color: var(--primary);
-            font-weight: 600;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .item-badge {
+        .bagage-badge {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            background: var(--white);
-            color: var(--dark);
-            padding: 8px 15px;
-            border-radius: 20px;
-            margin: 5px;
-            font-size: 0.9rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border: 1px solid var(--border-color);
+            gap: 0.75rem;
+            background: var(--corsair-blue);
+            color: white;
+            padding: 0.75rem 1.25rem;
+            border-radius: 25px;
+            margin: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
         }
         
         .resume-prix {
-            background: linear-gradient(135deg, var(--light), var(--light-gray));
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            border: 2px solid var(--border-color);
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
         }
         
         .ligne-prix {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 12px;
-            padding-bottom: 12px;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
             border-bottom: 1px solid var(--border-color);
+            font-size: 1.05rem;
         }
         
         .ligne-prix:last-child {
@@ -943,141 +905,75 @@ ob_end_flush();
         }
         
         .prix-total {
-            border-top: 3px solid var(--primary);
-            padding-top: 15px;
-            margin-top: 15px;
+            border-top: 3px solid var(--border-color);
+            padding-top: 1rem;
+            margin-top: 1rem;
             font-weight: 700;
             font-size: 1.4rem;
-            color: var(--primary);
+            color: var(--corsair-blue);
         }
         
         .alert {
-            padding: 15px 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
+            padding: 1.25rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
             display: flex;
             align-items: center;
-            gap: 12px;
-            border: 2px solid transparent;
+            gap: 0.75rem;
+            font-size: 1rem;
         }
         
         .alert-danger {
             background: #f8d7da;
             color: #721c24;
-            border-color: #f5c6cb;
+            border: 2px solid #f5c6cb;
         }
         
         .alert-success {
             background: #d1fae5;
             color: #065f46;
-            border-color: #a7f3d0;
+            border: 2px solid #a7f3d0;
         }
         
         .alert-info {
             background: #dbeafe;
             color: #1e40af;
-            border-color: #93c5fd;
+            border: 2px solid #93c5fd;
+        }
+        
+        .selected-seats-display {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            display: none;
+            border: 1px solid var(--corsair-light-blue);
+        }
+        
+        .seat-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--corsair-blue);
+            color: white;
+            padding: 0.75rem 1.25rem;
+            border-radius: 25px;
+            margin: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
         }
         
         .timer {
-            background: linear-gradient(135deg, var(--warning), #ffd351);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 12px;
+            background: var(--warning);
+            color: var(--dark);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
             font-weight: bold;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
-        }
-        
-        .sidebar-section {
-            margin-bottom: 25px;
-            padding-bottom: 25px;
-            border-bottom: 2px solid var(--light-gray);
-        }
-        
-        .sidebar-section:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-        
-        .sidebar-title {
-            color: var(--primary);
-            font-weight: 600;
-            margin-bottom: 15px;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .flight-summary {
-            background: linear-gradient(135deg, var(--primary), #0077cc);
-            color: white;
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .flight-route {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        
-        .flight-airport {
-            text-align: center;
-        }
-        
-        .airport-code {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-        
-        .airport-name {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-        
-        .flight-duration {
-            text-align: center;
-            flex: 1;
-            padding: 0 20px;
-        }
-        
-        .duration-line {
-            height: 2px;
-            background: rgba(255,255,255,0.5);
-            position: relative;
-            margin: 10px 0;
-        }
-        
-        .duration-line::before {
-            content: "✈";
-            position: absolute;
-            top: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--primary);
-            padding: 5px;
-            border-radius: 50%;
-        }
-        
-        @media (max-width: 1024px) {
-            .reservation-layout {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-            
-            .reservation-sidebar {
-                position: static;
-                order: -1;
-            }
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
         }
         
         @media (max-width: 768px) {
@@ -1090,47 +986,47 @@ ob_end_flush();
             }
             
             .legende-sieges {
-                grid-template-columns: 1fr;
+                flex-direction: column;
+                gap: 1rem;
             }
             
             .progress-steps {
                 flex-wrap: wrap;
-                gap: 15px;
+                gap: 1rem;
             }
             
             .auth-buttons {
                 flex-direction: column;
-                gap: 10px;
+                gap: 0.5rem;
             }
             
             .bagage-controls {
                 flex-wrap: wrap;
             }
             
-            .flight-route {
-                flex-direction: column;
-                gap: 15px;
+            .reservation-header {
+                padding: 1.5rem;
             }
             
-            .flight-duration {
-                padding: 0;
+            .form-section {
+                padding: 1.5rem;
             }
         }
         
         .loading {
             display: none;
             text-align: center;
-            padding: 30px;
+            padding: 2rem;
         }
         
         .spinner {
             border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary);
+            border-top: 4px solid var(--corsair-blue);
             border-radius: 50%;
             width: 50px;
             height: 50px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            margin: 0 auto 1rem;
         }
         
         @keyframes spin {
@@ -1138,28 +1034,35 @@ ob_end_flush();
             100% { transform: rotate(360deg); }
         }
         
-        .class-badge {
-            display: inline-block;
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-left: 10px;
+        .flight-path {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 1rem 0;
+            gap: 1rem;
         }
         
-        .badge-premium {
-            background: var(--premium);
-            color: white;
+        .flight-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--corsair-blue);
         }
         
-        .badge-business {
-            background: var(--business);
-            color: white;
+        .flight-line {
+            flex-grow: 1;
+            height: 3px;
+            background: linear-gradient(90deg, var(--corsair-blue), var(--corsair-light-blue));
+            position: relative;
         }
         
-        .badge-economy {
-            background: var(--economy);
-            color: white;
+        .flight-line::after {
+            content: "✈";
+            position: absolute;
+            right: -10px;
+            top: -12px;
+            font-size: 1.5rem;
+            color: var(--corsair-blue);
         }
     </style>
 </head>
@@ -1173,309 +1076,272 @@ ob_end_flush();
                 </a>
                 <div class="auth-buttons">
                     <span class="user-welcome">
-                        <i class="fas fa-user-circle"></i> 
+                        <i class="fas fa-user"></i> 
                         Bonjour, <?php echo htmlspecialchars($_SESSION['prenom'] ?? $_SESSION['nom'] ?? 'Utilisateur'); ?>
                     </span>
-                    <a href="vge64/index2.php" class="btn btn-outline">
-                        <i class="fas fa-user"></i> Mon compte
-                    </a>
-                    <a href="vge64/deconnexion.php" class="btn btn-primary">
-                        <i class="fas fa-sign-out-alt"></i> Déconnexion
-                    </a>
+                    <a href="vge64/index2.php" class="btn btn-outline">Mon compte</a>
+                    <a href="vge64/deconnexion.php" class="btn btn-primary">Déconnexion</a>
                 </div>
             </div>
         </div>
     </header>
 
     <div class="container">
-        <div class="reservation-layout">
-            <!-- Colonne principale -->
-            <div class="reservation-main">
-                <!-- En-tête -->
-                <div class="reservation-header">
-                    <h1 class="reservation-title">
-                        <i class="fas fa-plane-departure"></i> Finalisez votre réservation
-                    </h1>
-                    <p>Votre vol <?php echo htmlspecialchars($vol['depart']); ?> → <?php echo htmlspecialchars($vol['arrivee']); ?> du <?php echo date('d/m/Y', strtotime($vol['date_depart'])); ?></p>
-                    
-                    <!-- Barre de progression -->
-                    <div class="progress-steps">
-                        <div class="step completed">
-                            <div class="step-number"><i class="fas fa-check"></i></div>
-                            <div class="step-label">Recherche</div>
-                        </div>
-                        <div class="step completed">
-                            <div class="step-number"><i class="fas fa-check"></i></div>
-                            <div class="step-label">Sélection</div>
-                        </div>
-                        <div class="step active">
-                            <div class="step-number">3</div>
-                            <div class="step-label">Réservation</div>
-                        </div>
-                        <div class="step">
-                            <div class="step-number">4</div>
-                            <div class="step-label">Confirmation</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Timer de réservation -->
-                    <div class="timer">
-                        <i class="fas fa-clock"></i>
-                        <span>Temps restant : </span>
-                        <span id="reservation-timer">15:00</span>
-                    </div>
-                </div>
+        <!-- Barre de progression -->
+        <div class="progress-steps">
+            <div class="step completed">
+                <div class="step-number"><i class="fas fa-check"></i></div>
+                <div class="step-label">Recherche</div>
+            </div>
+            <div class="step completed">
+                <div class="step-number"><i class="fas fa-check"></i></div>
+                <div class="step-label">Sélection</div>
+            </div>
+            <div class="step active">
+                <div class="step-number">3</div>
+                <div class="step-label">Réservation</div>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-label">Confirmation</div>
+            </div>
+        </div>
+
+        <div class="reservation-container">
+            <!-- En-tête -->
+            <div class="reservation-header">
+                <h1 class="reservation-title"><i class="fas fa-plane"></i> Réservation de vol</h1>
+                <p>Finalisez votre réservation en choisissant vos sièges et options</p>
                 
-                <!-- Formulaire de réservation -->
-                <form method="POST" class="reservation-form" id="reservationForm">
-                    <?php if (isset($erreur)): ?>
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-triangle"></i> 
-                            <div><strong>Erreur :</strong> <?php echo $erreur; ?></div>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <!-- Sélection du nombre de passagers -->
-                    <div class="form-section">
-                        <h3 class="section-title">
-                            <i class="fas fa-users"></i> Nombre de passagers
-                        </h3>
-                        <div class="form-group">
-                            <label for="nombre_passagers">Combien de passagers voyagent ? *</label>
-                            <select name="nombre_passagers" id="nombre_passagers" class="form-control" required>
-                                <?php for ($i = 1; $i <= min(10, $vol['places_disponibles']); $i++): ?>
-                                    <option value="<?php echo $i; ?>" <?php echo isset($_POST['nombre_passagers']) && $_POST['nombre_passagers'] == $i ? 'selected' : ''; ?>>
-                                        <?php echo $i; ?> passager(s) - <?php echo number_format($vol['prix'] * $i, 2, ',', ' '); ?>€
-                                    </option>
-                                <?php endfor; ?>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <!-- Sélection des sièges -->
-                    <div class="form-section">
-                        <h3 class="section-title">
-                            <i class="fas fa-chair"></i> Choix des sièges
-                        </h3>
-                        
-                        <!-- Affichage des sièges sélectionnés -->
-                        <div class="selected-items" id="selected-seats-display" style="display: none;">
-                            <h4 class="selected-title">
-                                <i class="fas fa-check-circle"></i> Sièges sélectionnés
-                            </h4>
-                            <div id="selected-seats-list"></div>
-                        </div>
-                        
-                        <div class="sieges-container">
-                            <div class="avion-schema">
-                                <div class="cockpit">
-                                    <i class="fas fa-plane"></i> COCKPIT - VOL <?php echo htmlspecialchars($vol['numero_vol']); ?>
-                                </div>
-                                
-                                <?php
-                                // Organiser les sièges par rangée
-                                $sieges_par_rang = [];
-                                foreach ($sieges_disponibles as $siege) {
-                                    $sieges_par_rang[$siege['rang']][] = $siege;
-                                }
-                                
-                                // Trier par rangée
-                                ksort($sieges_par_rang);
-                                
-                                foreach ($sieges_par_rang as $rang => $sieges_rang):
-                                    // Déterminer la configuration des sièges
-                                    $positions = array_column($sieges_rang, 'position');
-                                    $has_couloir = in_array('C', $positions);
-                                ?>
-                                    <div class="rangee-sieges">
-                                        <div class="numero-rangee"><?php echo $rang; ?></div>
-                                        
-                                        <?php 
-                                        $last_position = '';
-                                        foreach ($sieges_rang as $siege): 
-                                            // Ajouter un espace pour le couloir si nécessaire
-                                            if ($has_couloir && $last_position === 'A' && $siege['position'] === 'C') {
-                                                echo '<div class="couloir">Couloir</div>';
-                                            }
-                                            
-                                            $classe_siege = 'disponible';
-                                            if (in_array($siege['id_siege'], $sieges_occupes)) {
-                                                $classe_siege = 'occupe';
-                                            }
-                                            
-                                            // Ajouter classe pour siège premium/business
-                                            $classe_siege .= ' ' . $siege['classe'];
-                                        ?>
-                                            <label class="siege <?php echo $classe_siege; ?>" 
-                                                   data-supplement="<?php echo $siege['supplement_prix'] > 0 ? '+' . $siege['supplement_prix'] . '€' : ''; ?>"
-                                                   title="Siège <?php echo $siege['position'].$rang; ?> - <?php echo $siege['classe']; ?><?php echo $siege['supplement_prix'] > 0 ? ' - Supplément: ' . $siege['supplement_prix'] . '€' : ''; ?>">
-                                                <input type="checkbox" name="sieges[]" value="<?php echo $siege['id_siege']; ?>" 
-                                                       style="display: none;" 
-                                                       <?php echo in_array($siege['id_siege'], $sieges_occupes) ? 'disabled' : ''; ?>
-                                                       onchange="toggleSiege(this)">
-                                                <?php echo $siege['position']; ?>
-                                            </label>
-                                        <?php 
-                                            $last_position = $siege['position'];
-                                        endforeach; 
-                                        ?>
-                                    </div>
-                                <?php endforeach; ?>
-                                
-                                <!-- Légende améliorée -->
-                                <div class="legende-sieges">
-                                    <div class="legende-item">
-                                        <div class="legende-couleur" style="background: var(--success);"></div>
-                                        <span>Disponible</span>
-                                    </div>
-                                    <div class="legende-item">
-                                        <div class="legende-couleur" style="background: var(--primary);"></div>
-                                        <span>Sélectionné</span>
-                                    </div>
-                                    <div class="legende-item">
-                                        <div class="legende-couleur" style="background: var(--danger);"></div>
-                                        <span>Occupé</span>
-                                    </div>
-                                    <div class="legende-item">
-                                        <div class="legende-couleur" style="background: linear-gradient(135deg, #fff9e6, #ffefb3); border-color: var(--premium);"></div>
-                                        <span>Première classe</span>
-                                    </div>
-                                    <div class="legende-item">
-                                        <div class="legende-couleur" style="background: linear-gradient(135deg, #f0e6ff, #d9c8ff); border-color: var(--business);"></div>
-                                        <span>Affaires</span>
-                                    </div>
-                                    <div class="legende-item">
-                                        <div class="legende-couleur" style="background: var(--white); border-color: var(--economy);"></div>
-                                        <span>Économique</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Options de bagage -->
-                    <div class="form-section">
-                        <h3 class="section-title">
-                            <i class="fas fa-suitcase-rolling"></i> Options de bagage
-                        </h3>
-                        
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i>
-                            <strong>Inclus avec votre billet :</strong> 1 bagage à main (8kg) par passager
-                        </div>
-                        
-                        <!-- Affichage des bagages sélectionnés -->
-                        <div class="selected-items" id="selected-bagages-display" style="display: none;">
-                            <h4 class="selected-title">
-                                <i class="fas fa-check-circle"></i> Bagages sélectionnés
-                            </h4>
-                            <div id="selected-bagages-list"></div>
-                        </div>
-                        
-                        <div class="bagages-container">
-                            <?php foreach ($options_bagage as $option): ?>
-                                <?php if ($option['nom_option'] !== 'Bagage à main'): ?>
-                                    <div class="bagage-option">
-                                        <div class="bagage-header">
-                                            <h4>
-                                                <?php echo htmlspecialchars($option['nom_option']); ?>
-                                                <?php if ($option['poids_max']): ?>
-                                                    <small>(jusqu'à <?php echo $option['poids_max']; ?>kg)</small>
-                                                <?php endif; ?>
-                                            </h4>
-                                            <span class="bagage-price">+<?php echo number_format($option['prix_supplement'], 2, ',', ' '); ?>€</span>
-                                        </div>
-                                        
-                                        <?php if (!empty($option['description'])): ?>
-                                            <p class="bagage-description"><?php echo htmlspecialchars($option['description']); ?></p>
-                                        <?php endif; ?>
-                                        
-                                        <div class="bagage-controls">
-                                            <button type="button" class="btn-qty minus" data-target="bagage_<?php echo $option['id_option']; ?>">-</button>
-                                            <input type="number" 
-                                                   name="bagages[<?php echo $option['id_option']; ?>]" 
-                                                   id="bagage_<?php echo $option['id_option']; ?>"
-                                                   class="bagage-qty" 
-                                                   value="0" 
-                                                   min="0" 
-                                                   max="10"
-                                                   onchange="calculerPrix()">
-                                            <button type="button" class="btn-qty plus" data-target="bagage_<?php echo $option['id_option']; ?>">+</button>
-                                            
-                                            <span class="bagage-total" id="bagage_total_<?php echo $option['id_option']; ?>">
-                                                0,00€
-                                            </span>
-                                        </div>
-                                    </div>
-                                <?php endif; ?>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                    
-                    <!-- Loading indicator -->
-                    <div class="loading" id="loading">
-                        <div class="spinner"></div>
-                        <p>Traitement de votre réservation...</p>
-                    </div>
-                    
-                    <!-- Bouton de réservation -->
-                    <div class="form-section">
-                        <button type="submit" name="reserver" class="btn btn-success btn-lg btn-full" id="submit-btn">
-                            <i class="fas fa-credit-card"></i> Confirmer et payer la réservation
-                        </button>
-                        <p style="text-align: center; margin-top: 15px; color: var(--gray); font-size: 0.9rem;">
-                            <i class="fas fa-lock"></i> Paiement 100% sécurisé SSL - Vos données sont protégées
-                        </p>
-                    </div>
-                </form>
+                <!-- Timer de réservation -->
+                <div class="timer">
+                    <i class="fas fa-clock"></i>
+                    <span id="reservation-timer">15:00</span>
+                </div>
             </div>
             
-            <!-- Sidebar avec résumé -->
-            <div class="reservation-sidebar">
-                <!-- Résumé du vol -->
-                <div class="sidebar-section">
-                    <h3 class="sidebar-title">
-                        <i class="fas fa-receipt"></i> Récapitulatif du vol
-                    </h3>
-                    <div class="flight-summary">
-                        <div class="flight-route">
-                            <div class="flight-airport">
-                                <div class="airport-code"><?php echo substr($vol['depart'], 0, 3); ?></div>
-                                <div class="airport-name"><?php echo htmlspecialchars($vol['depart']); ?></div>
+            <!-- Résumé du vol -->
+            <div class="vol-resume">
+                <h2 class="section-title"><i class="fas fa-info-circle"></i> Résumé du vol</h2>
+                
+                <!-- Représentation du vol -->
+                <div class="flight-path">
+                    <div class="flight-dot"></div>
+                    <div class="flight-line"></div>
+                    <div class="flight-dot"></div>
+                </div>
+                
+                <div class="vol-info-grid">
+                    <div class="info-card">
+                        <div class="info-label"><i class="fas fa-plane-departure"></i> Départ</div>
+                        <div class="info-value"><?php echo htmlspecialchars($vol['depart']); ?></div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label"><i class="fas fa-plane-arrival"></i> Arrivée</div>
+                        <div class="info-value"><?php echo htmlspecialchars($vol['arrivee']); ?></div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label"><i class="fas fa-calendar-alt"></i> Date et heure</div>
+                        <div class="info-value"><?php echo date('d/m/Y H:i', strtotime($vol['date_depart'])); ?></div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label"><i class="fas fa-building"></i> Compagnie</div>
+                        <div class="info-value"><?php echo htmlspecialchars($vol['nom_compagnie']); ?></div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Important :</strong> Vous avez 15 minutes pour compléter votre réservation. Passé ce délai, les sièges sélectionnés seront libérés.
+                </div>
+            </div>
+            
+            <!-- Formulaire de réservation -->
+            <form method="POST" class="reservation-form" id="reservationForm">
+                <?php if (isset($erreur)): ?>
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        <div><?php echo $erreur; ?></div>
+                    </div>
+                <?php endif; ?>
+                
+                <!-- Sélection du nombre de passagers -->
+                <div class="form-section">
+                    <h3 class="section-title"><i class="fas fa-users"></i> Nombre de passagers</h3>
+                    <div class="form-group">
+                        <label for="nombre_passagers">Nombre de passagers *</label>
+                        <select name="nombre_passagers" id="nombre_passagers" class="form-control" required>
+                            <?php for ($i = 1; $i <= min(10, $vol['places_disponibles']); $i++): ?>
+                                <option value="<?php echo $i; ?>" <?php echo isset($_POST['nombre_passagers']) && $_POST['nombre_passagers'] == $i ? 'selected' : ''; ?>>
+                                    <?php echo $i; ?> passager(s) - <?php echo number_format($vol['prix'] * $i, 2, ',', ' '); ?>€
+                                </option>
+                            <?php endfor; ?>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Sélection des sièges -->
+                <div class="form-section">
+                    <h3 class="section-title"><i class="fas fa-chair"></i> Choix des sièges</h3>
+                    
+                    <!-- Affichage des sièges sélectionnés -->
+                    <div class="selected-seats-display" id="selected-seats-display" style="display: none;">
+                        <h4>Sièges sélectionnés :</h4>
+                        <div id="selected-seats-list"></div>
+                    </div>
+                    
+                    <div class="sieges-container">
+                        <div class="avion-schema">
+                            <div class="cockpit">
+                                <i class="fas fa-plane"></i> COCKPIT
                             </div>
-                            <div class="flight-duration">
-                                <div class="duration-line"></div>
-                                <div><?php echo date('H:i', strtotime($vol['date_depart'])); ?> - <?php echo date('H:i', strtotime($vol['date_arrivee'])); ?></div>
+                            
+                            <?php
+                            // Organiser les sièges par rangée
+                            $sieges_par_rang = [];
+                            foreach ($sieges_disponibles as $siege) {
+                                $sieges_par_rang[$siege['rang']][] = $siege;
+                            }
+                            
+                            // Trier par rangée
+                            ksort($sieges_par_rang);
+                            
+                            foreach ($sieges_par_rang as $rang => $sieges_rang):
+                                // Déterminer la configuration des sièges
+                                $positions = array_column($sieges_rang, 'position');
+                                $has_couloir = in_array('C', $positions);
+                            ?>
+                                <div class="rangee-sieges">
+                                    <div class="numero-rangee"><?php echo $rang; ?></div>
+                                    
+                                    <?php 
+                                    $last_position = '';
+                                    foreach ($sieges_rang as $siege): 
+                                        // Ajouter un espace pour le couloir si nécessaire
+                                        if ($has_couloir && $last_position === 'A' && $siege['position'] === 'C') {
+                                            echo '<div class="couloir">Couloir</div>';
+                                        }
+                                        
+                                        $classe_siege = 'disponible';
+                                        if (in_array($siege['id_siege'], $sieges_occupes)) {
+                                            $classe_siege = 'occupe';
+                                        }
+                                        
+                                        // Ajouter classe pour siège premium/business
+                                        if ($siege['supplement_prix'] > 50) {
+                                            $classe_siege .= ' premium';
+                                        } elseif ($siege['supplement_prix'] > 20) {
+                                            $classe_siege .= ' business';
+                                        }
+                                    ?>
+                                        <label class="siege <?php echo $classe_siege; ?>" 
+                                               data-supplement="<?php echo $siege['supplement_prix'] > 0 ? '+' . $siege['supplement_prix'] . '€' : ''; ?>"
+                                               title="Siège <?php echo $siege['position'].$rang; ?><?php echo $siege['supplement_prix'] > 0 ? ' - Supplément: ' . $siege['supplement_prix'] . '€' : ''; ?>">
+                                            <input type="checkbox" name="sieges[]" value="<?php echo $siege['id_siege']; ?>" 
+                                                   style="display: none;" 
+                                                   <?php echo in_array($siege['id_siege'], $sieges_occupes) ? 'disabled' : ''; ?>
+                                                   onchange="toggleSiege(this)">
+                                            <?php echo $siege['position']; ?>
+                                        </label>
+                                    <?php 
+                                        $last_position = $siege['position'];
+                                    endforeach; 
+                                    ?>
+                                </div>
+                            <?php endforeach; ?>
+                            
+                            <!-- Légende améliorée -->
+                            <div class="legende-sieges">
+                                <div class="legende-item">
+                                    <div class="legende-couleur" style="background: var(--success);"></div>
+                                    <span>Disponible</span>
+                                </div>
+                                <div class="legende-item">
+                                    <div class="legende-couleur" style="background: var(--corsair-blue);"></div>
+                                    <span>Sélectionné</span>
+                                </div>
+                                <div class="legende-item">
+                                    <div class="legende-couleur" style="background: var(--danger);"></div>
+                                    <span>Occupé</span>
+                                </div>
+                                <div class="legende-item">
+                                    <div class="legende-couleur" style="background: var(--premium);"></div>
+                                    <span>Premium (+50€)</span>
+                                </div>
+                                <div class="legende-item">
+                                    <div class="legende-couleur" style="background: var(--business);"></div>
+                                    <span>Business (+20€)</span>
+                                </div>
                             </div>
-                            <div class="flight-airport">
-                                <div class="airport-code"><?php echo substr($vol['arrivee'], 0, 3); ?></div>
-                                <div class="airport-name"><?php echo htmlspecialchars($vol['arrivee']); ?></div>
-                            </div>
-                        </div>
-                        <div style="text-align: center; font-size: 0.9rem;">
-                            <div><strong><?php echo htmlspecialchars($vol['nom_compagnie']); ?></strong> • Vol <?php echo htmlspecialchars($vol['numero_vol']); ?></div>
-                            <div><?php echo htmlspecialchars($vol['avion_modele']); ?></div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Détails du prix -->
-                <div class="sidebar-section">
-                    <h3 class="sidebar-title">
-                        <i class="fas fa-euro-sign"></i> Détail du prix
-                    </h3>
+                <!-- Options de bagage -->
+                <div class="form-section">
+                    <h3 class="section-title"><i class="fas fa-suitcase"></i> Options de bagage</h3>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Inclus avec votre billet :</strong> 1 bagage à main (8kg) par passager
+                    </div>
+                    
+                    <!-- Affichage des bagages sélectionnés -->
+                    <div class="selected-bagages" id="selected-bagages-display" style="display: none;">
+                        <h4>Bagages sélectionnés :</h4>
+                        <div id="selected-bagages-list"></div>
+                    </div>
+                    
+                    <div class="bagages-container">
+                        <?php foreach ($options_bagage as $option): ?>
+                            <?php if ($option['nom_option'] !== 'Bagage à main'): ?>
+                                <div class="bagage-option">
+                                    <div class="bagage-header">
+                                        <h4><?php echo htmlspecialchars($option['nom_option']); ?></h4>
+                                        <span class="bagage-price">+<?php echo number_format($option['prix_supplement'], 2, ',', ' '); ?>€</span>
+                                    </div>
+                                    
+                                    <?php if (!empty($option['description'])): ?>
+                                        <p class="bagage-description"><?php echo htmlspecialchars($option['description']); ?></p>
+                                    <?php endif; ?>
+                                    
+                                    <div class="bagage-controls">
+                                        <button type="button" class="btn-qty minus" data-target="bagage_<?php echo $option['id_option']; ?>">-</button>
+                                        <input type="number" 
+                                               name="bagages[<?php echo $option['id_option']; ?>]" 
+                                               id="bagage_<?php echo $option['id_option']; ?>"
+                                               class="bagage-qty" 
+                                               value="0" 
+                                               min="0" 
+                                               max="10"
+                                               onchange="calculerPrix()">
+                                        <button type="button" class="btn-qty plus" data-target="bagage_<?php echo $option['id_option']; ?>">+</button>
+                                        
+                                        <span class="bagage-total" id="bagage_total_<?php echo $option['id_option']; ?>">
+                                            0,00€
+                                        </span>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                
+                <!-- Résumé du prix -->
+                <div class="form-section">
+                    <h3 class="section-title"><i class="fas fa-receipt"></i> Résumé du prix</h3>
                     <div class="resume-prix">
                         <div class="ligne-prix">
-                            <span>Billet(s) de base:</span>
-                            <span id="sidebar-prix-base"><?php echo number_format($vol['prix'], 2, ',', ' '); ?>€</span>
+                            <span>Prix de base (<span id="passagers-count">1</span> passager(s)):</span>
+                            <span id="prix-base"><?php echo number_format($vol['prix'], 2, ',', ' '); ?>€</span>
                         </div>
                         <div class="ligne-prix">
                             <span>Suppléments sièges:</span>
-                            <span id="sidebar-supplements">0,00€</span>
+                            <span id="supplements-total">0,00€</span>
                         </div>
                         <div class="ligne-prix">
                             <span>Suppléments bagages:</span>
-                            <span id="sidebar-bagages">0,00€</span>
+                            <span id="supplements-bagage">0,00€</span>
                         </div>
                         <div class="ligne-prix">
                             <span>Frais de service:</span>
@@ -1486,26 +1352,28 @@ ob_end_flush();
                             <span>25,00€</span>
                         </div>
                         <div class="ligne-prix prix-total">
-                            <span>Total à payer:</span>
-                            <span id="sidebar-prix-total"><?php echo number_format($vol['prix'] + 9 + 25, 2, ',', ' '); ?>€</span>
+                            <span>Total:</span>
+                            <span id="prix-total"><?php echo number_format($vol['prix'] + 9 + 25, 2, ',', ' '); ?>€</span>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Informations importantes -->
-                <div class="sidebar-section">
-                    <h3 class="sidebar-title">
-                        <i class="fas fa-info-circle"></i> Informations
-                    </h3>
-                    <div class="alert alert-info" style="margin: 0;">
-                        <i class="fas fa-clock"></i>
-                        <div>
-                            <strong>Enregistrement :</strong> Ouverture 2h avant le départ<br>
-                            <strong>Embarquement :</strong> 40 min avant le départ
-                        </div>
-                    </div>
+                <!-- Loading indicator -->
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Traitement de votre réservation...</p>
                 </div>
-            </div>
+                
+                <!-- Bouton de réservation -->
+                <div class="form-section">
+                    <button type="submit" name="reserver" class="btn btn-success btn-lg btn-full" id="submit-btn">
+                        <i class="fas fa-credit-card"></i> Confirmer et payer la réservation
+                    </button>
+                    <p style="text-align: center; margin-top: 1rem; color: var(--secondary); font-size: 0.9rem;">
+                        <i class="fas fa-lock"></i> Paiement sécurisé SSL
+                    </p>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -1520,12 +1388,6 @@ ob_end_flush();
         const nomsSieges = {};
         <?php foreach ($sieges_disponibles as $siege): ?>
         nomsSieges[<?php echo $siege['id_siege']; ?>] = '<?php echo $siege['position'] . $siege['rang']; ?>';
-        <?php endforeach; ?>
-
-        // Stocker les classes des sièges
-        const classesSieges = {};
-        <?php foreach ($sieges_disponibles as $siege): ?>
-        classesSieges[<?php echo $siege['id_siege']; ?>] = '<?php echo $siege['classe']; ?>';
         <?php endforeach; ?>
 
         // Stocker les options de bagage
@@ -1579,21 +1441,13 @@ ob_end_flush();
                 }
             });
             
-            const totalBase = prixBase * nbPassagers;
-            const total = totalBase + supplements + supplementBagages + fraisService + taxesAeroport;
+            const total = (prixBase * nbPassagers) + supplements + supplementBagages + fraisService + taxesAeroport;
             
-            // Mettre à jour l'affichage principal
             document.getElementById('passagers-count').textContent = nbPassagers;
-            document.getElementById('prix-base').textContent = totalBase.toFixed(2).replace('.', ',') + '€';
+            document.getElementById('prix-base').textContent = (prixBase * nbPassagers).toFixed(2).replace('.', ',') + '€';
             document.getElementById('supplements-total').textContent = supplements.toFixed(2).replace('.', ',') + '€';
             document.getElementById('supplements-bagage').textContent = supplementBagages.toFixed(2).replace('.', ',') + '€';
             document.getElementById('prix-total').textContent = total.toFixed(2).replace('.', ',') + '€';
-            
-            // Mettre à jour la sidebar
-            document.getElementById('sidebar-prix-base').textContent = totalBase.toFixed(2).replace('.', ',') + '€';
-            document.getElementById('sidebar-supplements').textContent = supplements.toFixed(2).replace('.', ',') + '€';
-            document.getElementById('sidebar-bagages').textContent = supplementBagages.toFixed(2).replace('.', ',') + '€';
-            document.getElementById('sidebar-prix-total').textContent = total.toFixed(2).replace('.', ',') + '€';
             
             // Mettre à jour l'affichage des sièges et bagages sélectionnés
             afficherSiegesSelectionnes(siegesSelectionnes);
@@ -1613,23 +1467,9 @@ ob_end_flush();
             siegesIds.forEach(siegeId => {
                 const nomSiege = nomsSieges[siegeId];
                 const supplement = supplementsSieges[siegeId] || 0;
-                const classe = classesSieges[siegeId];
-                
-                let badgeClass = '';
-                switch(classe) {
-                    case 'première': badgeClass = 'badge-premium'; break;
-                    case 'affaires': badgeClass = 'badge-business'; break;
-                    default: badgeClass = 'badge-economy';
-                }
-                
                 const badge = document.createElement('div');
-                badge.className = 'item-badge';
-                badge.innerHTML = `
-                    <i class="fas fa-chair"></i> 
-                    <strong>${nomSiege}</strong>
-                    <span class="class-badge ${badgeClass}">${classe}</span>
-                    ${supplement > 0 ? '<span style="color: var(--secondary); margin-left: 5px;">(+' + supplement + '€)</span>' : ''}
-                `;
+                badge.className = 'seat-badge';
+                badge.innerHTML = `<i class="fas fa-chair"></i> ${nomSiege} ${supplement > 0 ? '(+' + supplement + '€)' : ''}`;
                 list.appendChild(badge);
             });
             
@@ -1648,13 +1488,11 @@ ob_end_flush();
             list.innerHTML = '';
             bagages.forEach(bagage => {
                 const badge = document.createElement('div');
-                badge.className = 'item-badge';
+                badge.className = 'bagage-badge';
                 badge.innerHTML = `
                     <i class="fas fa-suitcase"></i> 
                     ${bagage.quantite}x ${bagage.nom} 
-                    <strong style="color: var(--primary); margin-left: 5px;">
-                        (${bagage.total.toFixed(2).replace('.', ',')}€)
-                    </strong>
+                    (${bagage.total.toFixed(2).replace('.', ',')}€)
                 `;
                 list.appendChild(badge);
             });
@@ -1720,9 +1558,11 @@ ob_end_flush();
             
             // Changement de couleur pour les 5 dernières minutes
             if (timer <= 300) {
-                timerElement.parentElement.style.background = 'linear-gradient(135deg, var(--danger), #e35d6a)';
+                timerElement.parentElement.style.background = 'var(--danger)';
+                timerElement.parentElement.style.color = 'white';
             } else if (timer <= 600) {
-                timerElement.parentElement.style.background = 'linear-gradient(135deg, var(--warning), #ffd351)';
+                timerElement.parentElement.style.background = 'var(--warning)';
+                timerElement.parentElement.style.color = 'var(--dark)';
             }
             
             timer--;
