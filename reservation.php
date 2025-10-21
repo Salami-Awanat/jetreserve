@@ -78,14 +78,9 @@ try {
 $erreur = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
     
-    echo "<div style='background: purple; color: white; padding: 20px; margin: 20px;'>FORMULAIRE REÇU PAR LE SERVEUR !</div>";
-    
     $nombre_passagers = intval($_POST['nombre_passagers']);
     $sieges_selectionnes = isset($_POST['sieges']) ? array_map('intval', $_POST['sieges']) : [];
     $bagages_selectionnes = isset($_POST['bagages']) ? $_POST['bagages'] : [];
-    
-    echo "<div style='background: cyan; color: black; padding: 20px; margin: 20px;'>Données: Passagers=$nombre_passagers, Sièges=" . count($sieges_selectionnes) . "</div>";
-    
     
     // Validation
     $erreurs = [];
@@ -110,14 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
         try {
             $pdo->beginTransaction();
             
-<<<<<<< HEAD
-            // CALCUL DU PRIX
-=======
-            error_log("=== DÉBUT RÉSERVATION ===");
-            echo "<div style='background: green; color: white; padding: 20px; margin: 20px;'>DÉBUT RÉSERVATION - Pas d'erreurs de validation</div>";
-            
-            // CALCUL RAPIDE DU PRIX
->>>>>>> 860bd52adcab16adebf0d649eb5014017cc59b55
+
             $prix_total = $vol['prix'] * $nombre_passagers;
             
             // Suppléments sièges
@@ -199,38 +187,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reserver'])) {
             
             $pdo->commit();
             
-<<<<<<< HEAD
-            // Rediriger vers la page de paiement
-=======
-            error_log("=== RÉSERVATION RÉUSSIE ===");
-            echo "<div style='background: blue; color: white; padding: 20px; margin: 20px;'>RÉSERVATION RÉUSSIE - ID: $id_reservation</div>";
+            error_log("=== RÉSERVATION RÉUSSIE - ID: $id_reservation ===");
             
-            // VIDER LE BUFFER ET REDIRIGER PROPREMENT
-            while (ob_get_level() > 0) {
-                ob_end_clean();
-            }
-            
-            // Rediriger vers la page de confirmation
-<<<<<<< HEAD
-            header('Location: confirmation_reservation.php?id_reservation=' . $id_reservation);
-=======
-            error_log("Redirection vers paiement.php avec reservation_id=$id_reservation");
->>>>>>> 860bd52adcab16adebf0d649eb5014017cc59b55
             header('Location: paiement.php?reservation_id=' . $id_reservation);
->>>>>>> 8161cc1ad516c2df9fe8064c8f9bfff11ee16d63
             exit;
             
         } catch (Exception $e) {
             $pdo->rollBack();
-<<<<<<< HEAD
+
             $erreurs[] = "Erreur lors de la réservation: " . $e->getMessage();
-=======
+            
+
             $erreur_message = "Erreur lors de la réservation: " . $e->getMessage();
             $erreurs[] = $erreur_message;
             error_log("=== ERREUR RÉSERVATION: " . $e->getMessage() . " ===");
             echo "<div style='background: red; color: white; padding: 20px; margin: 20px;'>ERREUR: " . htmlspecialchars($e->getMessage()) . "</div>";
->>>>>>> 860bd52adcab16adebf0d649eb5014017cc59b55
         }
+        
     }
     
     if (!empty($erreurs)) {
@@ -922,73 +895,7 @@ ksort($sieges_par_rang);
 
         const timerInterval = setInterval(updateTimer, 1000);
 
-<<<<<<< HEAD
-        // Événements pour le calcul du prix
-=======
-<<<<<<< HEAD
-        // JavaScript temporairement désactivé pour debug
-        console.log('JavaScript chargé mais gestionnaire de soumission désactivé');
-=======
-        // Gestion de la soumission du formulaire
-        let formSubmitted = false;
-        document.getElementById('reservationForm').addEventListener('submit', function(e) {
-            // Empêcher les soumissions multiples
-            if (formSubmitted) {
-                console.log("Tentative de soumission multiple bloquée");
-                e.preventDefault();
-                return false;
-            }
-            
-            const nbPassagers = parseInt(document.getElementById('nombre_passagers').value);
-            const siegesSelectionnes = document.querySelectorAll('input[name="sieges[]"]:checked');
-            
-            if (siegesSelectionnes.length !== nbPassagers) {
-                e.preventDefault();
-                alert(`Vous devez sélectionner exactement ${nbPassagers} siège(s) pour ${nbPassagers} passager(s)`);
-                return;
-            }
-            
-            // Marquer le formulaire comme soumis
-            formSubmitted = true;
-            
-            // Afficher le loading
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('submit-btn').disabled = true;
-            
-            // Arrêter le timer
-            clearInterval(timerInterval);
-            
-            // Désactiver tous les événements qui pourraient interférer
-            window.onbeforeunload = null;
-            
-            // Désactiver tous les champs du formulaire pour éviter les modifications pendant la soumission
-            Array.from(this.elements).forEach(element => {
-                if (element.id !== 'submit-btn') {
-                    element.disabled = true;
-                }
-            });
-            
-            // Soumission directe sans setTimeout pour éviter les problèmes
-            try {
-                console.log('Soumission du formulaire de réservation');
-                
-                // Soumission immédiate sans overlay ni délai
-                this.submit();
-            } catch (error) {
-                console.error('Erreur lors de la soumission:', error);
-                // En cas d'erreur, réactiver le formulaire
-                formSubmitted = false;
-                Array.from(this.elements).forEach(element => {
-                    element.disabled = false;
-                });
-                document.getElementById('submit-btn').disabled = false;
-                document.getElementById('loading').style.display = 'none';
-            }
-        });
->>>>>>> 8161cc1ad516c2df9fe8064c8f9bfff11ee16d63
-
-        // Initialisation
->>>>>>> 860bd52adcab16adebf0d649eb5014017cc59b55
+        // Événements pour le calcul du prix et la soumission
         document.getElementById('nombre_passagers').addEventListener('change', function() {
             const maxSieges = parseInt(this.value);
             const siegesSelectionnes = document.querySelectorAll('input[name="sieges[]"]:checked');
@@ -1004,7 +911,7 @@ ksort($sieges_par_rang);
             calculerPrix();
         });
 
-<<<<<<< HEAD
+
         // Validation du formulaire
         document.getElementById('reservationForm').addEventListener('submit', function(e) {
             const nbPassagers = parseInt(document.getElementById('nombre_passagers').value);
@@ -1016,13 +923,13 @@ ksort($sieges_par_rang);
                 return;
             }
         });
-=======
+
         // Initialiser le calcul du prix
         calculerPrix();
 
         // beforeunload temporairement désactivé pour debug
         console.log('beforeunload désactivé pour debug');
->>>>>>> 860bd52adcab16adebf0d649eb5014017cc59b55
+
 
         // Initialisation
         calculerPrix();
