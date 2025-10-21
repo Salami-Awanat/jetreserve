@@ -309,10 +309,10 @@ $total_messages = 2; // À remplacer par une vraie requête si vous avez une tab
             <nav class="nav-menu">
                 <ul class="nav-links">
                     <li><a href="../index.php"><i class="fas fa-home"></i> Accueil</a></li>
-                    <li><a href="#"><i class="fas fa-plane-departure"></i> Vols</a></li>
+                    <li><a href="../vols.php"><i class="fas fa-plane-departure"></i> Vols</a></li>
                     <li><a href="#"><i class="fas fa-suitcase-rolling"></i> Forfaits</a></li>
                     <li><a href="#"><i class="fas fa-ticket-alt"></i> Billetterie</a></li>
-                    <li><a href="#"><i class="fas fa-map-marked-alt"></i> Destinations</a></li>
+                    <li><a href="../destinations.php"><i class="fas fa-map-marked-alt"></i> Destinations</a></li>
                     <li><a href="#"><i class="fas fa-tags"></i> Offres spéciales</a></li>
                 </ul>
                 <div class="contact-info">
