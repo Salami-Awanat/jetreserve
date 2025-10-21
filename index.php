@@ -25,6 +25,156 @@ $vols_populaires = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Newsletter Section améliorée */
+.newsletter-section {
+    background: linear-gradient(135deg, #1e2942 0%, #060f22 100%);
+    padding: 60px 0;
+    margin: 50px 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.newsletter-section::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.newsletter-section::after {
+    content: '';
+    position: absolute;
+    bottom: -30px;
+    left: -30px;
+    width: 150px;
+    height: 150px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+}
+
+.newsletter-section .container {
+    position: relative;
+    z-index: 2;
+}
+
+.newsletter-section .newsletter-content {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.newsletter-section h3 {
+    color: var(--white);
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.newsletter-section p {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.1rem;
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+.newsletter-section .newsletter-form {
+    display: flex;
+    gap: 15px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.newsletter-section .newsletter-form input {
+    flex: 1;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.95);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.newsletter-section .newsletter-form input:focus {
+    outline: none;
+    background: var(--white);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+}
+
+.newsletter-section .newsletter-form input::placeholder {
+    color: #999;
+}
+
+.newsletter-section .newsletter-form .btn {
+    padding: 15px 30px;
+    background: var(--danger);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+    white-space: nowrap;
+}
+
+.newsletter-section .newsletter-form .btn:hover {
+    background: #c0392b;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+}
+
+.newsletter-section .newsletter-form .btn:active {
+    transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .newsletter-section {
+        padding: 40px 20px;
+        margin: 30px 0;
+    }
+    
+    .newsletter-section h3 {
+        font-size: 1.5rem;
+    }
+    
+    .newsletter-section p {
+        font-size: 1rem;
+    }
+    
+    .newsletter-section .newsletter-form {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .newsletter-section .newsletter-form .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .newsletter-section h3 {
+        font-size: 1.3rem;
+    }
+    
+    .newsletter-section .newsletter-form input {
+        padding: 12px 15px;
+    }
+    
+    .newsletter-section .newsletter-form .btn {
+        padding: 12px 20px;
+    }
+}
+    </style>
 </head>
 <body>
     <!-- Header -->
