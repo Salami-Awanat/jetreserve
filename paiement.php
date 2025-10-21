@@ -1,8 +1,8 @@
 <?php
 // Déclarations use doivent être en tout début de fichier
-require_once 'includes/PHPMailer/src/Exception.php';
-require_once 'includes/PHPMailer/src/PHPMailer.php';
-require_once 'includes/PHPMailer/src/SMTP.php';
+require_once __DIR__ . '/phpmailer/phpmailer/src/Exception.php';
+require_once __DIR__ . '/phpmailer/phpmailer/src/PHPMailer.php';
+require_once __DIR__ . '/phpmailer/phpmailer/src/SMTP.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
