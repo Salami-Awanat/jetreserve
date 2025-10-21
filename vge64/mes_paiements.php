@@ -234,21 +234,14 @@ try {
                                         <div class="montant">
                                             <strong><?php echo number_format($paiement['montant'], 2, ',', ' '); ?> €</strong>
                                         </div>
-                                        <div class="paiement-actions">
-                                            <button class="btn btn-outline-primary btn-sm">
-                                                <i class="fas fa-receipt me-1"></i>Facture
-                                            </button>
-                                            <?php if ($paiement['statut'] === 'réussi'): ?>
-                                                <button class="btn btn-success btn-sm">
-                                                    <i class="fas fa-download me-1"></i>Télécharger
-                                                </button>
-                                            <?php endif; ?>
-                                            <?php if ($paiement['statut'] === 'en attente'): ?>
+                                        <!-- SUPPRESSION DES BOUTONS FACTURE ET TÉLÉCHARGER -->
+                                        <?php if ($paiement['statut'] === 'en attente'): ?>
+                                            <div class="paiement-actions">
                                                 <button class="btn btn-warning btn-sm">
                                                     <i class="fas fa-redo me-1"></i>Réessayer
                                                 </button>
-                                            <?php endif; ?>
-                                        </div>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
