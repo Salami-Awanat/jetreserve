@@ -13,6 +13,16 @@ $stmt = $pdo->prepare("SELECT v.*, c.nom_compagnie, c.code_compagnie
                       LIMIT 4");
 $stmt->execute();
 $vols_populaires = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Vérifier s'il y a des offres spéciales - version corrigée sans colonne promotion
+try {
+    $stmt_offres = $pdo->prepare("SELECT COUNT(*) as count FROM vols WHERE date_depart > NOW() AND prix < 200");
+    $stmt_offres->execute();
+    $has_offres = $stmt_offres->fetch(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // Si erreur, considérer qu'il n'y a pas d'offres spéciales
+    $has_offres = ['count' => 0];
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -136,6 +146,187 @@ $vols_populaires = $stmt->fetchAll(PDO::FETCH_ASSOC);
     transform: translateY(-1px);
 }
 
+/* Effet pour Service Client */
+.service-client-link {
+    position: relative;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.service-client-link:hover {
+    color: var(--info) !important;
+    transform: translateY(-2px);
+}
+
+/* Modal pour Service Client */
+.service-client-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.service-client-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    animation: modalAppear 0.4s ease-out;
+}
+
+@keyframes modalAppear {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -60%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+.service-client-content h3 {
+    color: var(--primary);
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    text-align: center;
+}
+
+.service-client-info {
+    margin: 25px 0;
+}
+
+.service-client-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.service-client-item:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+}
+
+.service-client-item i {
+    width: 30px;
+    color: var(--primary);
+    font-size: 1.1rem;
+}
+
+.service-client-item span {
+    color: var(--secondary);
+    font-weight: 500;
+}
+
+.close-modal {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--secondary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.close-modal:hover {
+    color: var(--danger);
+    transform: rotate(90deg);
+}
+
+.service-client-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+.service-client-buttons .btn {
+    flex: 1;
+    text-align: center;
+    padding: 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-call {
+    background: var(--success);
+    color: white;
+}
+
+.btn-call:hover {
+    background: #27ae60;
+    transform: translateY(-2px);
+}
+
+.btn-email {
+    background: var(--info);
+    color: white;
+}
+
+.btn-email:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+}
+
+/* Section Offres Spéciales */
+.offres-speciales {
+    padding: 60px 0;
+    background: #f8f9fa;
+}
+
+.no-offres {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.no-offres i {
+    font-size: 4rem;
+    color: #ddd;
+    margin-bottom: 20px;
+}
+
+.no-offres h3 {
+    color: var(--secondary);
+    margin-bottom: 15px;
+}
+
+.no-offres p {
+    color: #666;
+    margin-bottom: 25px;
+}
+
+/* Animation de vibration pour attirer l'attention */
+@keyframes vibrate {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
+}
+
+.service-client-link.vibrate {
+    animation: vibrate 0.3s ease-in-out;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .newsletter-section {
@@ -159,6 +350,10 @@ $vols_populaires = $stmt->fetchAll(PDO::FETCH_ASSOC);
     .newsletter-section .newsletter-form .btn {
         width: 100%;
     }
+
+    .service-client-buttons {
+        flex-direction: column;
+    }
 }
 
 @media (max-width: 480px) {
@@ -172,6 +367,10 @@ $vols_populaires = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     .newsletter-section .newsletter-form .btn {
         padding: 12px 20px;
+    }
+
+    .service-client-content {
+        padding: 30px 20px;
     }
 }
     </style>
@@ -197,14 +396,13 @@ $vols_populaires = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <nav class="nav-menu">
                 <ul class="nav-links">
                     <li><a href="#"><i class="fas fa-home"></i> Accueil</a></li>
-                    <li><a href="#"><i class="fas fa-plane-departure"></i>Vols</a></li>
-                    <li><a href="#"><i class="fas fa-suitcase-rolling"></i> Forfaits</a></li>
-                    <li><a href="#"><i class="fas fa-ticket-alt"></i> Billetterie</a></li>
-                    <li><a href="#"><i class="fas fa-map-marked-alt"></i> Destinations</a></li>
-                    <li><a href="#"><i class="fas fa-tags"></i> Offres spéciales</a></li>
+                    <li><a href="#vols-populaires" class="vols-link"><i class="fas fa-plane-departure"></i> Vols</a></li>
+                    <li><a href="#offres-speciales" class="offres-speciales-link"><i class="fas fa-tags"></i> Offres spéciales</a></li>
+                    <li><a href="#destination-coeur" class="destinations-link"><i class="fas fa-map-marked-alt"></i> Destinations</a></li>
+                    <li><a href="#" class="service-client-link" id="serviceClientBtn"><i class="fas fa-headset"></i> Service client</a></li>
                 </ul>
                 <div class="contact-info">
-                    <a href="#"><i class="fas fa-phone-alt"></i> Service client</a>
+                    <a href="#" class="service-client-link"><i class="fas fa-phone-alt"></i> Service client</a>
                 </div>
             </nav>
         </div>
@@ -309,7 +507,7 @@ $vols_populaires = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <main class="container">
 
         <!-- Offers Section - Maintenant avec les vrais vols de la BDD -->
-        <section class="offers">
+        <section id="vols-populaires" class="offers">
             <h2 class="section-title">Vols Populaires</h2>
             <p style="text-align: center; color: var(--secondary); margin-bottom: 30px;">
                 Découvrez nos vols les plus demandés avec des prix compétitifs
@@ -367,9 +565,34 @@ $vols_populaires = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </section>
 
-        <!-- Le reste de votre structure reste inchangé -->
-        <!-- Madeira Section -->
-        <section class="madeira-section">
+        <!-- Section Offres Spéciales -->
+        <section id="offres-speciales" class="offres-speciales">
+            <h2 class="section-title">Offres Spéciales</h2>
+            <?php if ($has_offres['count'] > 0): ?>
+                <div class="offers-grid">
+                    <div style="text-align: center; padding: 40px; background: white; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+                        <i class="fas fa-tags" style="font-size: 3rem; color: var(--success); margin-bottom: 20px;"></i>
+                        <h3 style="color: var(--success); margin-bottom: 15px;">Offres spéciales disponibles !</h3>
+                        <p style="color: #666; margin-bottom: 25px;">Nous avons <?php echo $has_offres['count']; ?> offre(s) spéciale(s) en ce moment.</p>
+                        <a href="#vols-populaires" class="btn btn-primary">
+                            <i class="fas fa-eye"></i> Voir les vols
+                        </a>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="no-offres">
+                    <i class="fas fa-tags"></i>
+                    <h3>Aucune offre spéciale pour le moment</h3>
+                    <p>Revenez bientôt pour découvrir nos promotions exceptionnelles</p>
+                    <button class="btn btn-outline" onclick="alert('Vous serez notifié dès que de nouvelles offres seront disponibles !')">
+                        <i class="fas fa-bell"></i> Me notifier des nouvelles offres
+                    </button>
+                </div>
+            <?php endif; ?>
+        </section>
+
+        <!-- Madeira Section - Destination coup de coeur -->
+        <section id="destination-coeur" class="madeira-section">
             <h2 class="section-title">Destination coup de cœur de la semaine</h2>
             <div class="madeira-content">
                 <div class="madeira-image">
@@ -477,7 +700,7 @@ $vols_populaires = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="footer-column">
                     <h4>Nos services</h4>
                     <div class="footer-links">
-                        <li><a href="#"><i class="fas fa-chevron-right"></i> Vols réguliers</a></li>
+                        <li><a href="#vols-populaires"><i class="fas fa-chevron-right"></i> Vols réguliers</a></li>
                         <li><a href="#"><i class="fas fa-chevron-right"></i> Vols + Hôtels</a></li>
                         <li><a href="#"><i class="fas fa-chevron-right"></i> Location de voiture</a></li>
                         <li><a href="#"><i class="fas fa-chevron-right"></i> Activités & excursions</a></li>
@@ -511,7 +734,7 @@ $vols_populaires = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                     </div>
                     <div class="footer-links">
-                        <li><a href="#"><i class="fas fa-chevron-right"></i> Service client</a></li>
+                        <li><a href="#" class="service-client-link"><i class="fas fa-chevron-right"></i> Service client</a></li>
                         <li><a href="#"><i class="fas fa-chevron-right"></i> Nous contacter</a></li>
                         <li><a href="#"><i class="fas fa-chevron-right"></i> Réclamations</a></li>
                     </div>
@@ -529,6 +752,51 @@ $vols_populaires = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
     </footer>
+
+    <!-- Modal Service Client -->
+    <div id="serviceClientModal" class="service-client-modal">
+        <div class="service-client-content">
+            <button class="close-modal">&times;</button>
+            <h3><i class="fas fa-headset"></i> Service Client</h3>
+            <p style="text-align: center; color: var(--secondary); margin-bottom: 20px;">
+                Nous sommes là pour vous aider 24h/24 et 7j/7
+            </p>
+            
+            <div class="service-client-info">
+                <div class="service-client-item">
+                    <i class="fas fa-phone"></i>
+                    <span>+33 1 23 45 67 89</span>
+                </div>
+                <div class="service-client-item">
+                    <i class="fas fa-envelope"></i>
+                    <span>service.client@jetreserve.com</span>
+                </div>
+                <div class="service-client-item">
+                    <i class="fas fa-clock"></i>
+                    <span>Disponible 24h/24, 7j/7</span>
+                </div>
+                <div class="service-client-item">
+                    <i class="fas fa-language"></i>
+                    <span>Assistance en français, anglais, espagnol</span>
+                </div>
+            </div>
+
+            <div class="service-client-buttons">
+                <a href="tel:+33123456789" class="btn btn-call">
+                    <i class="fas fa-phone"></i> Appeler maintenant
+                </a>
+                <a href="mailto:service.client@jetreserve.com" class="btn btn-email">
+                    <i class="fas fa-envelope"></i> Envoyer un email
+                </a>
+            </div>
+
+            <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
+                <p style="margin: 0; font-size: 0.9rem; color: #1565c0; text-align: center;">
+                    <i class="fas fa-info-circle"></i> Temps d'attente moyen : < 2 minutes
+                </p>
+            </div>
+        </div>
+    </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
@@ -580,6 +848,74 @@ $vols_populaires = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     toField.style.borderColor = '';
                     toField.style.boxShadow = '';
                 }, 2000);
+            });
+        });
+
+        // Gestion du Service Client
+        const serviceClientBtn = document.getElementById('serviceClientBtn');
+        const serviceClientModal = document.getElementById('serviceClientModal');
+        const closeModal = document.querySelector('.close-modal');
+
+        // Ouvrir le modal
+        serviceClientBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Ajouter l'effet de vibration
+            this.classList.add('vibrate');
+            
+            // Ouvrir le modal
+            serviceClientModal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            // Retirer l'animation après qu'elle soit terminée
+            setTimeout(() => {
+                this.classList.remove('vibrate');
+            }, 300);
+        });
+
+        // Fermer le modal
+        closeModal.addEventListener('click', function() {
+            serviceClientModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+
+        // Fermer en cliquant en dehors du modal
+        serviceClientModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                serviceClientModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // Fermer avec la touche Échap
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && serviceClientModal.style.display === 'block') {
+                serviceClientModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // Gestion des liens Service Client dans le footer
+        document.querySelectorAll('.footer-links .service-client-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                serviceClientModal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            });
+        });
+
+        // Navigation smooth pour les liens de menu
+        document.querySelectorAll('.nav-links a[href^="#"]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
             });
         });
     </script>
