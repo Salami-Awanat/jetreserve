@@ -82,8 +82,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simuler_paiement'])) 
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com'; // Remplacez par votre serveur SMTP
             $mail->SMTPAuth = true;
-            $mail->Username = 'votre-email@gmail.com'; // Remplacez par votre email
-            $mail->Password = 'votre-mot-de-passe-app'; // Remplacez par votre mot de passe d'application
+            $mail->Username = 'agbalessifloriane69@gmail.com'; // Remplacez par votre email
+            $mail->Password ='sgyd alra jjme wwpr'; // Remplacez par votre mot de passe d'application
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
             $mail->CharSet = 'UTF-8';
