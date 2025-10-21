@@ -689,11 +689,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simuler_paiement'])) 
                             </div>
                         </div>
                         
-                        <div class="simulation-notice">
-                            <i class="fas fa-info-circle"></i>
-                            <strong>SIMULATION :</strong> Ceci est une démonstration. Aucun paiement réel ne sera effectué.
-                            Utilisez les données pré-remplies pour tester.
-                        </div>
+                        
                         
                         <div class="security-notice">
                             <i class="fas fa-lock"></i>
