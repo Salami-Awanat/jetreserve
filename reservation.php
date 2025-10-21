@@ -298,7 +298,7 @@ ksort($sieges_par_rang);
         }
         
         .reservation-header {
-            background: linear-gradient(135deg, var(--corsair-blue), var(--corsair-dark-blue));
+            background: linear-gradient(135deg, var(--corsair-dark-blue), var(--corsair-dark-blue));
             color: var(--white);
             padding: 2rem;
         }
